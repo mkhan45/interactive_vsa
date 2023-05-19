@@ -1,0 +1,13 @@
+# Inverse semantics for python
+
+just test the input with the skeleton
+
+# Better inverse semantics for slice
+
+Look for all the strings in the cache that include the substring
+
+# Top down repair
+
+Replace each subexpression with a smaller pbe -- needs invsem for python?
+
+program repair???
