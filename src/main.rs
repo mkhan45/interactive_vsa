@@ -1,7 +1,18 @@
 use pyo3::prelude::*;
+use std::io::Write;
 
 mod synth;
 mod html;
+
+use html::ToHtml;
+
+use askama::Template;
+
+#[derive(Template)]
+#[template(path = "test.html")]
+struct VSATemplate {
+    vsa_html: String
+}
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // let code = include_str!("../combo_parser.py");
@@ -13,12 +24,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     use crate::synth::vsa::Lit;
     let examples = vec![
-        (Lit::StringConst("hello".to_string()), Lit::StringConst("HELLO WORLD".to_string())),
-        (Lit::StringConst("abcdef".to_string()), Lit::StringConst("ABCDEF WORLD".to_string())),
+        (Lit::StringConst("First Last".to_string()), Lit::StringConst("FL".to_string())),
+        (Lit::StringConst("Another Name".to_string()), Lit::StringConst("AN".to_string())),
     ];
 
-    let res = synth::top_down(&examples).unwrap();
-    println!("{}", res);
+    let (vsa, ast) = synth::top_down(&examples);
+    println!("{}", ast.unwrap());
+    println!("{}", vsa.to_html());
+
+    let template = VSATemplate { vsa_html: vsa.to_html() };
+    let file = std::fs::File::create("vsa.html")?;
+    let mut writer = std::io::BufWriter::new(file);
+    writer.write_all(template.render().unwrap().as_bytes())?;
 
     Ok(())
 }

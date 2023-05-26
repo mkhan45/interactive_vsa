@@ -44,7 +44,7 @@ pub fn regex(s: &String) -> Regex {
 // TODO:
 // add a substitute function
 
-pub fn top_down(examples: &[(Lit, Lit)]) -> Option<AST> {
+pub fn top_down(examples: &[(Lit, Lit)]) -> (VSA, Option<AST>) {
     let mut bank = Bank::new();
     let mut regex_bank = Bank::new();
     let mut all_cache = HashMap::new();
@@ -125,6 +125,7 @@ pub fn top_down(examples: &[(Lit, Lit)]) -> Option<AST> {
     let mut size = 1;
     let inps = examples.iter().map(|(inp, _)| inp);
 
+    let mut best_vsa = None;
     while size <= 6 {
         bottom_up(
             inps.clone(),
@@ -134,7 +135,7 @@ pub fn top_down(examples: &[(Lit, Lit)]) -> Option<AST> {
             &mut regex_bank,
             enable_bools
         );
-        dbg!(&bank);
+        // dbg!(&bank);
         // dbg!(bank.total_entries());
         let mut ex_vsas = examples.iter().enumerate().map(|(i, (inp, out))| {
             let mut cache: HashMap<Lit, Rc<VSA>> = HashMap::new();
@@ -165,19 +166,22 @@ pub fn top_down(examples: &[(Lit, Lit)]) -> Option<AST> {
         }
 
         match res.pick_best(|ast| ast.cost()) {
-            res @ Some(_) => return res,
-            None => size += 1,
+            ast @ Some(_) => return (res.clone().as_ref().clone(), ast),
+            None => {
+                best_vsa = Some(res);
+                size += 1;
+            }
         }
     }
 
-    None
+    (best_vsa.unwrap().clone().as_ref().clone(), None)
 }
 
 // TODO:
 // there's still an issue with cycles here
 // maybe still needs a queue
 fn learn(inp: &Lit, out: &Lit, cache: &mut HashMap<Lit, Rc<VSA>>, bank: &Bank<AST>) -> Rc<VSA> {
-    dbg!();
+    // dbg!();
     let mut unifier = Vec::new();
     if let Some(res) = cache.get(out) {
         unifier.push(res.as_ref().clone());
@@ -265,7 +269,7 @@ fn learn(inp: &Lit, out: &Lit, cache: &mut HashMap<Lit, Rc<VSA>>, bank: &Bank<AS
         .for_each(|vsa| unifier.push(vsa));
         },
 
-        (Lit::StringConst(s), Lit::StringConst(inp_str)) => {
+        (Lit::StringConst(s), Lit::StringConst(inp_str)) if inp_str.contains(s) => {
             let re = regex(s);
             let start = inp_str.find(s).unwrap();
             let end = start + s.len();
@@ -522,6 +526,6 @@ fn bottom_up<'a>(
     // dbg!(&bank);
 }
 
-pub fn top_down_vsa(examples: &[(Lit, Lit)]) -> AST {
-    top_down(examples).unwrap()
+pub fn top_down_vsa(examples: &[(Lit, Lit)]) -> (VSA, Option<AST>) {
+    top_down(examples)
 }

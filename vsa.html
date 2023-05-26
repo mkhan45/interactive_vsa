@@ -1,0 +1,64 @@
+<html>
+    <head>
+        <title> VSA </title>
+    </head>
+    <body>
+        <div class="vsa">
+            <div class="union"><div class="union"><div class="join"><span class="op">Concat</span><div class="join-children"><div class="union"><div class="union"><div class="leaf"><span class="lit">(X[0..1])</span></div><div class="leaf"><span class="lit">(X[0..1])</span></div></div><div class="union"><div class="leaf"><span class="lit">(X[0..1])</span></div><div class="join"><span class="op">Slice</span><div class="join-children"><div class="leaf"><span class="lit">0</span></div><div class="leaf"><span class="lit">1</span></div></div></div></div></div><div class="union"><div class="union"><div class="join"><span class="op">Slice</span><div class="join-children"><div class="leaf"><span class="lit">X.find_end(' ', 0)</span></div><div class="leaf"><span class="lit">X.find_end('[A-Z]', 1)</span></div></div></div></div></div></div></div></div></div>
+        </div>
+    </body>
+    <style>
+.vsa {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: monospace;
+  font-size: 1.5em;
+}
+
+.vsa *:not(.lit) {
+  padding: 10px;
+  margin: 10px;
+}
+
+.union {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.join {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 1px solid black;
+}
+
+.join .op {
+    font-weight: bold;
+    text-decoration: underline;
+}
+
+.join-children > * {
+    border: 1px solid black;
+}
+
+.op {
+  margin-right: 5px;
+}
+
+.join-children {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.leaf {
+  margin-left: 10px;
+  margin-right: 10px;
+}
+
+.lit {
+}
+    </style>
+</html>
