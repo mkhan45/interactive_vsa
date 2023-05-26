@@ -1,13 +1,15 @@
-# Inverse semantics for python
+# todo
 
-just test the input with the skeleton
+1. General algorithm
+- start with a single node of unlearned with the goal
+- click a node to run inverse semantics and add new unlearned nodes
+- a way to extract a program with ??? for unlearned nodes
 
-# Better inverse semantics for slice
+2. other stuff
+- a button to bottom up enumerate
+- a way to manually add to bank in python (js? lua? rhai?)
+- a way to automatically add a program to the vsa at a certain spot? is this useful?
 
-Look for all the strings in the cache that include the substring
+# Tree
 
-# Top down repair
-
-Replace each subexpression with a smaller pbe -- needs invsem for python?
-
-program repair???
+should probably use canvas/pixi instead of html but :/
