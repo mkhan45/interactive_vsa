@@ -24,15 +24,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     use crate::synth::vsa::Lit;
     let examples = vec![
-        (Lit::StringConst("First Last".to_string()), Lit::StringConst("FL".to_string())),
-        (Lit::StringConst("Another Name".to_string()), Lit::StringConst("AN".to_string())),
+        (Lit::StringConst("First Last".to_string()), Lit::StringConst("F.L.".to_string())),
+        (Lit::StringConst("Another Name".to_string()), Lit::StringConst("A.N.".to_string())),
     ];
 
     let (vsa, ast) = synth::top_down(&examples);
     println!("{}", ast.unwrap());
-    println!("{}", vsa.to_html());
+    // println!("{}", vsa.to_html());
 
-    let template = VSATemplate { vsa_html: vsa.to_html() };
+    let template = VSATemplate { vsa_html: vsa.to_html(&Lit::StringConst("First Last".to_string())) };
     let file = std::fs::File::create("vsa.html")?;
     let mut writer = std::io::BufWriter::new(file);
     writer.write_all(template.render().unwrap().as_bytes())?;

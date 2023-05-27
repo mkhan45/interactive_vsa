@@ -59,7 +59,7 @@ where
         VSA::Leaf(std::iter::once(Rc::new(ast)).collect())
     }
 
-    fn eval(&self, inp: &L) -> L {
+    pub fn eval(&self, inp: &L) -> L {
         self.pick_one().unwrap().eval(inp)
         // match self {
         //     VSA::Leaf(c) => c.iter().next().unwrap().clone().eval(inp),
