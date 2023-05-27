@@ -6,7 +6,6 @@ where L: Clone + Eq + std::hash::Hash + std::fmt::Debug + InputLit + pyo3::ToPyO
       AST<L, F>: std::fmt::Display
 {
     fn to_html(&self, input: &L) -> String;
-    fn is_empty(&self) -> bool;
 }
 
 impl<L, F> ToHtml<L, F> for VSA<L, F>
@@ -15,13 +14,6 @@ where
     F: Language<L> + std::hash::Hash + std::fmt::Debug + Copy + std::cmp::Eq,
     AST<L, F>: std::fmt::Display,
 {
-    fn is_empty(&self) -> bool {
-        match self {
-            VSA::Unlearned { .. } => false,
-            _ => self.pick_one().is_none(),
-        }
-    }
-
     fn to_html(&self, input: &L) -> String {
         match self {
             _ if self.is_empty() => {
@@ -38,10 +30,15 @@ where
             }
             VSA::Union(vsas) => {
                 let mut s = String::new();
-                s.push_str("<div class=\"union\">");
+                s.push_str("<div class=\"join\">");
+                s.push_str("<div class=\"join-label\">");
+                s.push_str(format!("{:?} -> {:?}", input, self.eval(input)).as_str());
+                s.push_str("</div>");
+                s.push_str("<div class=\"join-children\">");
                 for vsa in vsas {
                     s.push_str(&vsa.to_html(input));
                 }
+                s.push_str("</div>");
                 s.push_str("</div>");
                 s
             }

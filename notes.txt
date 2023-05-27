@@ -1,5 +1,10 @@
 # todo
 
+0. VSA HTML
+- [X] Flatten
+- [X] Remove empty
+- [ ] Dedup
+
 1. General algorithm
 - start with a single node of unlearned with the goal
 - click a node to run inverse semantics and add new unlearned nodes

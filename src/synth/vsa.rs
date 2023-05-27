@@ -236,6 +236,37 @@ where
             }
         }
     }
+
+    pub fn is_empty(&self) -> bool {
+        match self {
+            VSA::Unlearned { .. } => false,
+            _ => self.pick_one().is_none(),
+        }
+    }
+
+    pub fn flatten(vsa: Rc<VSA<L, F>>) -> Rc<VSA<L,F>> {
+        match vsa.as_ref() {
+            VSA::Leaf(s) => Rc::new(VSA::Leaf(s.clone())),
+            VSA::Union(s) if s.iter().filter(|vsa| !vsa.is_empty()).count() == 1 => {
+                let vsa = s.iter().find(|vsa| !vsa.is_empty()).unwrap();
+                VSA::flatten(vsa.clone())
+            }
+            VSA::Union(s) => {
+                let flattened = s.iter().flat_map(|vsa| {
+                    match vsa.as_ref() {
+                        VSA::Union(s) => s.iter().cloned().collect(),
+                        _ => vec![vsa.clone()]
+                    }
+                }).collect();
+                Rc::new(VSA::Union(flattened))
+            }
+            VSA::Join { op, children } => {
+                let children = children.iter().map(|vsa| VSA::flatten(vsa.clone())).collect();
+                Rc::new(VSA::Join { op: *op, children })
+            }
+            VSA::Unlearned { .. } => vsa
+        }
+    }
 }
 
 pub trait Cost {
