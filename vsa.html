@@ -3,8 +3,8 @@
         <title> VSA </title>
     </head>
     <body>
-        <div class="vsa">
-            <div class="join"><span class="op">Concat</span><div class="join-label">StringConst("First Last") -> StringConst("FL")</div><div class="join-children"><div class="join"><div class="join-label">StringConst("First Last") -> StringConst("F")</div><div class="join-children"><div class="leaf"><span class="lit">(X[0..1])</span></div><div class="leaf"><span class="lit">(X[0..1])</span></div><div class="leaf"><span class="lit">(X[0..1])</span></div><div class="join"><span class="op">Slice</span><div class="join-label">StringConst("First Last") -> StringConst("F")</div><div class="join-children"><div class="leaf"><span class="lit">0</span></div><div class="leaf"><span class="lit">1</span></div></div></div></div></div><div class="join"><span class="op">Slice</span><div class="join-label">StringConst("First Last") -> StringConst("L")</div><div class="join-children"><div class="leaf"><span class="lit">X.find_end(' ', 0)</span></div><div class="leaf"><span class="lit">X.find_end('[A-Z]', 1)</span></div></div></div></div></div>
+        <div class="vsa" id="root">
+            <div class="join"><span class="op">Concat</span><div class="join-label">StringConst("First Last") -> StringConst("FL")</div><div class="join-children"><div class="union"><div class="goal-label">StringConst("First Last") -> StringConst("F")</div><div class="join-children"><div class="leaf"><div class="leaf" id='94130028384080'><span class="lit">(X[0..1])</span></div><div class="leaf"><div class="leaf" id='94130028329584'><span class="lit">(X[0..1])</span></div><div class="leaf"><div class="leaf" id='94130028388240'><span class="lit">(X[0..1])</span></div><div class="join"><span class="op">Slice</span><div class="join-label">StringConst("First Last") -> StringConst("F")</div><div class="join-children"><div class="leaf"><div class="leaf" id='94130028215520'><span class="lit">0</span></div><div class="leaf"><div class="leaf" id='94130028216976'><span class="lit">1</span></div></div></div></div></div><div class="join"><span class="op">Slice</span><div class="join-label">StringConst("First Last") -> StringConst("L")</div><div class="join-children"><div class="leaf"><div class="leaf" id='94130028360880'><span class="lit">X.find_end(' ', 0)</span></div><div class="leaf"><div class="leaf" id='94130028214240'><span class="lit">X.find_end('[A-Z]', 1)</span></div></div></div></div></div>
         </div>
     </body>
     <style>
@@ -13,10 +13,12 @@ body {
 }
 .vsa {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   font-family: monospace;
   font-size: 1.5em;
+  max-width: 100vw;
+  font-size: calc(1vw);
 }
 
 .vsa *:not(.lit) {
@@ -59,9 +61,29 @@ body {
 .leaf {
   margin-left: 10px;
   margin-right: 10px;
+      display: flex;
+          flex-direction: row;
 }
 
 .lit {
 }
     </style>
+
+    <script>
+        window.root = document.querySelector('#root');
+        window.vsas = () => allChildren(root);
+
+        function allChildren(node) {
+            function helper(node, acc) {
+                for (let child of node.children) {
+                    acc.push(child);
+                    helper(child, acc);
+                }
+            }
+
+            let acc = [node]
+            helper(node, acc);
+            return acc;
+        }
+    </script>
 </html>

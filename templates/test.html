@@ -3,7 +3,7 @@
         <title> VSA </title>
     </head>
     <body>
-        <div class="vsa">
+        <div class="vsa" id="root">
             {{ vsa_html|safe }}
         </div>
     </body>
@@ -13,10 +13,12 @@ body {
 }
 .vsa {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   font-family: monospace;
   font-size: 1.5em;
+  max-width: 100vw;
+  font-size: calc(1vw);
 }
 
 .vsa *:not(.lit) {
@@ -59,9 +61,34 @@ body {
 .leaf {
   margin-left: 10px;
   margin-right: 10px;
+      display: flex;
+          flex-direction: row;
 }
 
 .lit {
 }
     </style>
+
+    <script>
+        window.root = document.querySelector('#root');
+        window.vsas = () => allChildren(root);
+
+        function allChildren(node) {
+            function helper(node, acc) {
+                for (let child of node.children) {
+                    acc.push(child);
+                    helper(child, acc);
+                }
+            }
+
+            let acc = [node]
+            helper(node, acc);
+            return acc;
+        }
+
+        vsas().forEach(node => {
+            node.onclick = () => {
+            }
+        });
+    </script>
 </html>

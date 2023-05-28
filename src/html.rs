@@ -1,5 +1,7 @@
 use crate::synth::vsa::*;
 
+use std::rc::Rc;
+
 pub trait ToHtml<L, F>
 where L: Clone + Eq + std::hash::Hash + std::fmt::Debug + InputLit + pyo3::ToPyObject,
       F: Language<L> + std::hash::Hash + std::fmt::Debug + Copy + std::cmp::Eq,
@@ -8,20 +10,26 @@ where L: Clone + Eq + std::hash::Hash + std::fmt::Debug + InputLit + pyo3::ToPyO
     fn to_html(&self, input: &L) -> String;
 }
 
-impl<L, F> ToHtml<L, F> for VSA<L, F>
+impl<L, F> ToHtml<L, F> for Rc<VSA<L, F>>
 where
     L: Clone + Eq + std::hash::Hash + std::fmt::Debug + InputLit + pyo3::ToPyObject,
     F: Language<L> + std::hash::Hash + std::fmt::Debug + Copy + std::cmp::Eq,
     AST<L, F>: std::fmt::Display,
 {
     fn to_html(&self, input: &L) -> String {
-        match self {
+        fn to_ptr<T>(t: Rc<T>) -> *const Rc<T> {
+            let b = Box::new(t);
+            Box::into_raw(b)
+        }
+
+        match self.as_ref() {
             _ if self.is_empty() => {
                 "".to_string()
             }
             VSA::Leaf(set) => {
                 let mut s = String::new();
                 s.push_str("<div class=\"leaf\">");
+                s.push_str(format!("<div class=\"leaf\" id='{}'>", to_ptr(self.clone()) as usize).as_str());
                 for l in set {
                     s.push_str(&format!("<span class=\"lit\">{}</span>", l.clone()));
                 }
@@ -30,8 +38,8 @@ where
             }
             VSA::Union(vsas) => {
                 let mut s = String::new();
-                s.push_str("<div class=\"join\">");
-                s.push_str("<div class=\"join-label\">");
+                s.push_str("<div class=\"union\">");
+                s.push_str("<div class=\"goal-label\">");
                 s.push_str(format!("{:?} -> {:?}", input, self.eval(input)).as_str());
                 s.push_str("</div>");
                 s.push_str("<div class=\"join-children\">");
