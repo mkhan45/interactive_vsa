@@ -28,7 +28,6 @@ where
             }
             VSA::Leaf(set) => {
                 let mut s = String::new();
-                s.push_str("<div class=\"leaf\">");
                 s.push_str(format!("<div class=\"leaf\" id='{}'>", to_ptr(self.clone()) as usize).as_str());
                 for l in set {
                     s.push_str(&format!("<span class=\"lit\">{}</span>", l.clone()));
@@ -40,12 +39,14 @@ where
                 let mut s = String::new();
                 s.push_str("<div class=\"union\">");
                 s.push_str("<div class=\"goal-label\">");
-                s.push_str(format!("{:?} -> {:?}", input, self.eval(input)).as_str());
+                s.push_str(format!("{:?} → {:?}", input, self.eval(input)).as_str());
                 s.push_str("</div>");
                 s.push_str("<div class=\"join-children\">");
                 for vsa in vsas {
                     s.push_str(&vsa.to_html(input));
+                    s.push_str("∨");
                 }
+                s.pop();
                 s.push_str("</div>");
                 s.push_str("</div>");
                 s
@@ -57,12 +58,14 @@ where
                 s.push_str(&format!("{:?}", op));
                 s.push_str("</span>");
                 s.push_str("<div class=\"join-label\">");
-                s.push_str(format!("{:?} -> {:?}", input, self.eval(input)).as_str());
+                s.push_str(format!("{:?} → {:?}", input, self.eval(input)).as_str());
                 s.push_str("</div>");
                 s.push_str("<div class=\"join-children\">");
                 for child in children {
                     s.push_str(&child.to_html(input));
+                    s.push_str(" , ");
                 }
+                s.pop(); s.pop(); s.pop();
                 s.push_str("</div>");
                 s.push_str("</div>");
                 s

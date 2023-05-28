@@ -4,7 +4,7 @@
     </head>
     <body>
         <div class="vsa" id="root">
-            <div class="join"><span class="op">Concat</span><div class="join-label">StringConst("First Last") -> StringConst("FL")</div><div class="join-children"><div class="union"><div class="goal-label">StringConst("First Last") -> StringConst("F")</div><div class="join-children"><div class="leaf"><div class="leaf" id='94130028384080'><span class="lit">(X[0..1])</span></div><div class="leaf"><div class="leaf" id='94130028329584'><span class="lit">(X[0..1])</span></div><div class="leaf"><div class="leaf" id='94130028388240'><span class="lit">(X[0..1])</span></div><div class="join"><span class="op">Slice</span><div class="join-label">StringConst("First Last") -> StringConst("F")</div><div class="join-children"><div class="leaf"><div class="leaf" id='94130028215520'><span class="lit">0</span></div><div class="leaf"><div class="leaf" id='94130028216976'><span class="lit">1</span></div></div></div></div></div><div class="join"><span class="op">Slice</span><div class="join-label">StringConst("First Last") -> StringConst("L")</div><div class="join-children"><div class="leaf"><div class="leaf" id='94130028360880'><span class="lit">X.find_end(' ', 0)</span></div><div class="leaf"><div class="leaf" id='94130028214240'><span class="lit">X.find_end('[A-Z]', 1)</span></div></div></div></div></div>
+            <div class="join"><span class="op">Concat</span><div class="join-label">StringConst("First Last") → StringConst("FL")</div><div class="join-children"><div class="union"><div class="goal-label">StringConst("First Last") → StringConst("F")</div><div class="join-children"><div class="leaf" id='94212624516464'><span class="lit">(X[0..1])</span></div>∨<div class="leaf" id='94212624865152'><span class="lit">(X[0..1])</span></div>∨<div class="join"><span class="op">Slice</span><div class="join-label">StringConst("First Last") → StringConst("F")</div><div class="join-children"><div class="leaf" id='94212624682544'><span class="lit">0</span></div> , <div class="leaf" id='94212624693488'><span class="lit">1</span></div></div></div></div></div> , <div class="join"><span class="op">Slice</span><div class="join-label">StringConst("First Last") → StringConst("L")</div><div class="join-children"><div class="leaf" id='94212624643424'><span class="lit">X.find_end(' ', 0)</span></div> , <div class="leaf" id='94212624715344'><span class="lit">X.find_end('[A-Z]', 1)</span></div></div></div></div></div>
         </div>
     </body>
     <style>
@@ -28,7 +28,7 @@ body {
 
 .union {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   align-items: center;
 }
 
@@ -85,5 +85,10 @@ body {
             helper(node, acc);
             return acc;
         }
+
+        vsas().forEach(node => {
+            node.onclick = () => {
+            }
+        });
     </script>
 </html>

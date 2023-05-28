@@ -5,11 +5,11 @@ pub trait Language<L> {
     fn eval(&self, args: &[L], input: &L) -> L;
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum VSA<L, F>
 where
     L: Clone + Eq + std::hash::Hash + std::fmt::Debug + InputLit + pyo3::ToPyObject,
-    F: Language<L> + std::hash::Hash + std::fmt::Debug,
+    F: Language<L> + std::hash::Hash + std::fmt::Debug + Eq,
 {
     Leaf(HashSet<Rc<AST<L, F>>>),
     Union(Vec<Rc<VSA<L, F>>>),
@@ -20,7 +20,7 @@ where
 impl<L, F> Default for VSA<L, F>
 where
     L: std::hash::Hash + Eq + Clone + std::fmt::Debug + InputLit + pyo3::ToPyObject,
-    F: Language<L> + std::hash::Hash + std::fmt::Debug,
+    F: Language<L> + std::hash::Hash + std::fmt::Debug + Eq,
 {
     fn default() -> Self {
         VSA::Leaf(HashSet::new())
@@ -254,7 +254,11 @@ where
             VSA::Union(s) => {
                 let flattened = s.iter().flat_map(|vsa| {
                     match vsa.as_ref() {
-                        VSA::Union(s) => s.iter().cloned().collect(),
+                        VSA::Union(s) => {
+                            let mut nv: Vec<_> = s.iter().map(|vsa| VSA::flatten(vsa.clone())).collect();
+                            nv.dedup();
+                            nv
+                        }
                         _ => vec![vsa.clone()]
                     }
                 }).collect();
