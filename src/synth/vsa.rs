@@ -252,16 +252,17 @@ where
                 VSA::flatten(vsa.clone())
             }
             VSA::Union(s) => {
-                let flattened = s.iter().flat_map(|vsa| {
+                let mut flattened: Vec<_> = s.iter().flat_map(|vsa| {
                     match vsa.as_ref() {
                         VSA::Union(s) => {
                             let mut nv: Vec<_> = s.iter().map(|vsa| VSA::flatten(vsa.clone())).collect();
                             nv.dedup();
                             nv
-                        }
+                        },
                         _ => vec![vsa.clone()]
                     }
                 }).collect();
+                flattened.dedup();
                 Rc::new(VSA::Union(flattened))
             }
             VSA::Join { op, children } => {
