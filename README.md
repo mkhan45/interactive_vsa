@@ -5,10 +5,12 @@
 - [X] Remove empty
 - [ ] Dedup
     - hard to efficiently reduce a join to a single node
+    - use `VSA::contains` to check if siblings contain final AST
 - [ ] Place nodes in a reasonable starting position
     - some sort of bfs keeping track of position and depth?
 - [ ] Label index of join edges
-    - idk how
+    - idk how to do ui/ux for this
+    - maybe different connection points instead of all at the center
 - [ ] Draw the lines more nicely
 
 1. General algorithm
@@ -19,6 +21,9 @@
 adding to vsa at a spot
     - like taking the inverse semantics for concat but instead of every combo just specify one except apply it to
     operators outside the language that may exist in python
+- start with e.g. "First Last" -> "FL"
+    1. add VSA node `Execute(Python, "learn('F') + learn('L')"`)
+    2. join node with 2 children which can be learned independently
 
 2. other stuff
 - a button to bottom up enumerate
