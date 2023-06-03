@@ -7,11 +7,17 @@
     - hard to efficiently reduce a join to a single node
     - use `VSA::contains` to check if siblings contain final AST
 - [ ] Place nodes in a reasonable starting position
-    - some sort of bfs keeping track of position and depth?
 - [ ] Label index of join edges
     - idk how to do ui/ux for this
     - maybe different connection points instead of all at the center
 - [ ] Draw the lines more nicely
+
+Current process:
+    1. compile VSA to HTML, preserving the tree structure
+    2. Using the tree structure in the HTML, create an edge SVG node for each
+       adjacency, and store an adjacency list
+    3. Using the adjacency list, register onclick etc to drag the nodes and update the
+       edges
 
 1. General algorithm
 - start with a single node of unlearned with the goal
