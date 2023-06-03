@@ -5,6 +5,11 @@
 - [X] Remove empty
 - [ ] Dedup
     - hard to efficiently reduce a join to a single node
+- [ ] Place nodes in a reasonable starting position
+    - some sort of bfs keeping track of position and depth?
+- [ ] Label index of join edges
+    - idk how
+- [ ] Draw the lines more nicely
 
 1. General algorithm
 - start with a single node of unlearned with the goal
@@ -19,7 +24,3 @@ adding to vsa at a spot
 - a button to bottom up enumerate
 - a way to manually add to bank in python (js? lua? rhai?)
 - a way to automatically add a program to the vsa at a certain spot? is this useful?
-
-# Tree
-
-should probably use canvas/pixi instead of html but :/
