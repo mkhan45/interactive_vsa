@@ -4,6 +4,7 @@
 - [X] Flatten
 - [X] Remove empty
 - [ ] Dedup
+    - hard to efficiently reduce a join to a single node
 
 1. General algorithm
 - start with a single node of unlearned with the goal

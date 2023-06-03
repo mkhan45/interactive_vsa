@@ -36,38 +36,34 @@ where
                 s
             }
             VSA::Union(vsas) => {
-                let mut s = String::new();
-                s.push_str("<div class=\"union\">");
-                s.push_str("<div class=\"box goal-label\">");
-                s.push_str(format!("{:?} → {:?}", input, self.eval(input)).as_str());
-                s.push_str("</div>");
-                s.push_str("<div class=\"join-children\">");
-                for vsa in vsas {
-                    s.push_str(&vsa.to_html(input));
-                }
-                s.pop();
-                s.push_str("</div>");
-                s.push_str("</div>");
-                s
+                let child_html = vsas.iter().map(|c| c.to_html(input)).collect::<Vec<_>>().join(" ");
+                format!("
+                <div class=\"union\">
+                    <div class=\"box\">
+                        <span class=\"op\">∪</span>
+                        <div class=\"union-label\">{:?} → {:?}</div>
+                    </div>
+                    <div class=\"join-children\">
+                        {}
+                    </div>
+                </div>",
+                input, self.eval(input), child_html)
             }
             VSA::Join { op, children } => {
                 let mut s = String::new();
-                s.push_str("<div class=\"join\">");
-                s.push_str("<div class=\"box\">");
-                s.push_str("<span class=\"op\">");
-                s.push_str(&format!("{:?}", op));
-                s.push_str("</span>");
-                s.push_str("<div class=\"join-label\">");
-                s.push_str(format!("{:?} → {:?}", input, self.eval(input)).as_str());
-                s.push_str("</div>");
-                s.push_str("</div>");
-                s.push_str("<div class=\"join-children\">");
-                for child in children {
-                    s.push_str(&child.to_html(input));
-                }
-                s.push_str("</div>");
-                s.push_str("</div>");
-                s
+                let child_html = children.iter().map(|c| c.to_html(input)).collect::<Vec<_>>().join(" ");
+                format!("
+                <div class=\"join\">
+                    <div class=\"box\">
+                        <span class=\"op\">{:?}</span>
+                        <div class=\"join-label\">{:?} → {:?}</div>
+                    </div>
+                    <div class=\"join-children\">
+                        {}
+                    </div>
+                </div>
+                ", 
+                op, input, self.eval(input), child_html)
             }
             VSA::Unlearned { goal } => {
                 let mut s = String::new();

@@ -97,50 +97,107 @@ body {
         });
 
         let svg_container = document.querySelector('svg');
-        let child_info_map = new Map();
-        let child_to_info = child_info_map.get.bind(child_info_map);
-        for (let child of document.querySelectorAll('.box')) {
-            let grandparent = child.parentNode.parentNode;
-            let box = grandparent.children[0];
-            if (!box.classList.contains('box')) continue;
+        let nodes = new Map();
+        let add_child = (parent, child) => {
+            let parent_info = nodes.get(parent);
+            if (parent_info === undefined) {
+                parent_info = {
+                    node: parent,
+                    children: new Set(),
+                    parents: new Set(),
+                    from_lines: new Set(),
+                    to_lines: new Set()
+                };
+                nodes.set(parent, parent_info);
+            }
+            parent_info.children.add(child);
+        };
+        let add_parent = (child, parent) => {
+            let child_info = nodes.get(child);
+            if (child_info === undefined) {
+                child_info = {
+                    node: child,
+                    children: new Set(),
+                    parents: new Set(),
+                    from_lines: new Set(),
+                    to_lines: new Set()
+                };
+                nodes.set(child, child_info);
+            }
+            child_info.parents.add(parent);
+        };
+        let add_edge = (parent, child, line) => {
+            add_child(parent, child);
+            add_parent(child, parent);
+            nodes.get(parent).from_lines.add(line);
+            nodes.get(child).to_lines.add(line);
+        };
+        function find_parent_box(node) {
+            function helper(node) {
+                if (node.classList === undefined) return null;
 
-            let line = svg_container.appendChild(document.createElementNS('http://www.w3.org/2000/svg', 'line'));
-            line.setAttribute('x1', box.offsetLeft + box.offsetWidth / 2);
-            line.setAttribute('y1', box.offsetTop + box.offsetHeight);
-            line.setAttribute('x2', child.offsetLeft + child.offsetWidth / 2);
-            line.setAttribute('y2', child.offsetTop);
-            line.setAttribute('stroke', 'black');
+                if (node.classList.contains('union') || node.classList.contains('join')) {
+                    return node.children[0];
+                } else {
+                    return helper(node.parentNode);
+                }
+            }
 
-            child_info_map.set(child, {line, box, child});
+            return helper(node.parentNode.parentNode);
+        }
+        for (let node of document.querySelectorAll('.box')) {
+            let box = find_parent_box(node);
+            if (box !== null) {
+                let child = node;
+                let line = svg_container.appendChild(document.createElementNS('http://www.w3.org/2000/svg', 'line'));
+                line.setAttribute('x1', box.offsetLeft + box.offsetWidth / 2);
+                line.setAttribute('y1', box.offsetTop + box.offsetHeight);
+                line.setAttribute('x2', child.offsetLeft + child.offsetWidth / 2);
+                line.setAttribute('y2', child.offsetTop);
+                line.setAttribute('stroke', 'black');
+
+                add_edge(box, child, line);
+            } else {
+                // root
+                nodes.set(node, {
+                    node: node,
+                    children: new Set(),
+                    parents: new Set(),
+                    from_lines: new Set(),
+                    to_lines: new Set()
+                });
+            }
         }
 
-        for (let child of document.querySelectorAll('.box')) {
-            // make child draggable
-            // this is all copilot
-            child.addEventListener('mousedown', function(evt) {
-                var mousemove = function(evt) {
-                    child.style.left = (evt.pageX - child.offsetWidth / 2) + 'px';
-                    child.style.top = (evt.pageY - child.offsetHeight / 2) + 'px';
+        for (let [node, info] of nodes.entries()) {
+            let from_lines = Array.from(info.from_lines);
+            let to_lines = Array.from(info.to_lines);
 
-                    // TODO: fix how lines work
-                    // keep a map of from-lines and to-lines
-                    // update each line accordingly
-                    let child_info = child_to_info(child);
-                    if (child_info !== undefined) {
-                        let {line, box, _child} = child_info;
-                        line.setAttribute('x1', box.offsetLeft + box.offsetWidth / 2);
-                        line.setAttribute('y1', box.offsetTop + box.offsetHeight);
-                        line.setAttribute('x2', child.offsetLeft + child.offsetWidth / 2);
-                        line.setAttribute('y2', child.offsetTop);
+            // make node draggable
+            node.onmousedown = (e) => {
+                let x = e.clientX;
+                let y = e.clientY;
+                let move = (e) => {
+                    x = e.clientX;
+                    y = e.clientY;
+                    node.style.left = x - node.offsetWidth / 2 + 'px';
+                    node.style.top = y - node.offsetHeight / 2 + 'px';
+                    for (let line of from_lines) {
+                        line.setAttribute('x1', node.offsetLeft + node.offsetWidth / 2);
+                        line.setAttribute('y1', node.offsetTop + node.offsetHeight);
+                    }
+                    for (let line of to_lines) {
+                        line.setAttribute('x2', node.offsetLeft + node.offsetWidth / 2);
+                        line.setAttribute('y2', node.offsetTop);
                     }
                 };
-                var mouseup = function() {
-                    document.removeEventListener('mousemove', mousemove);
-                    document.removeEventListener('mouseup', mouseup);
+                let up = (e) => {
+                    document.removeEventListener('mousemove', move);
+                    document.removeEventListener('mouseup', up);
                 };
-                document.addEventListener('mousemove', mousemove);
-                document.addEventListener('mouseup', mouseup);
-            });
+                document.addEventListener('mousemove', move);
+                document.addEventListener('mouseup', up);
+            };
         }
     </script>
 </html>
