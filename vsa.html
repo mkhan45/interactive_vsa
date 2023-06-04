@@ -19,14 +19,14 @@
                         <div class="union-label">StringConst("First Last") → StringConst("F")</div>
                     </div>
                     <div class="join-children">
-                        <div class="leaf box" id='93987131323248'><span class="lit">(X[0..1])</span></div> 
+                        <div class="leaf box" id='94297205861152'><span class="lit">(X[0..1])</span></div> 
                 <div class="join">
                     <div class="box">
                         <span class="op">Slice</span>
                         <div class="join-label">StringConst("First Last") → StringConst("F")</div>
                     </div>
                     <div class="join-children">
-                        <div class="leaf box" id='93987131324672'><span class="lit">0</span></div> <div class="leaf box" id='93987131326256'><span class="lit">1</span></div>
+                        <div class="leaf box" id='94297205939440'><span class="lit">0</span></div> <div class="leaf box" id='94297205862192'><span class="lit">1</span></div>
                     </div>
                 </div>
                 
@@ -38,7 +38,7 @@
                         <div class="join-label">StringConst("First Last") → StringConst("L")</div>
                     </div>
                     <div class="join-children">
-                        <div class="leaf box" id='93987131322320'><span class="lit">X.find_end(' ', 0)</span></div> <div class="leaf box" id='93987131326848'><span class="lit">X.find_end('[A-Z]', 1)</span></div>
+                        <div class="leaf box" id='94297205937056'><span class="lit">X.find_end(' ', 0)</span></div> <div class="leaf box" id='94297205920608'><span class="lit">X.find_end('[A-Z]', 1)</span></div>
                     </div>
                 </div>
                 
@@ -137,33 +137,24 @@ body {
 
         let svg_container = document.querySelector('svg');
         let nodes = new Map();
+        let init_node = node => {
+            nodes.set(node, {
+                node: node,
+                children: new Set(),
+                parents: new Set(),
+                from_lines: new Set(),
+                to_lines: new Set()
+            });
+        };
+        let If = cond => { return { then: eff => cond && eff() } };
+        let ensure_init = node => If(nodes.get(node) === undefined).then(() => init_node(node));
         let add_child = (parent, child) => {
-            let parent_info = nodes.get(parent);
-            if (parent_info === undefined) {
-                parent_info = {
-                    node: parent,
-                    children: new Set(),
-                    parents: new Set(),
-                    from_lines: new Set(),
-                    to_lines: new Set()
-                };
-                nodes.set(parent, parent_info);
-            }
-            parent_info.children.add(child);
+            ensure_init(parent); // probably redundant
+            nodes.get(parent).children.add(child);
         };
         let add_parent = (child, parent) => {
-            let child_info = nodes.get(child);
-            if (child_info === undefined) {
-                child_info = {
-                    node: child,
-                    children: new Set(),
-                    parents: new Set(),
-                    from_lines: new Set(),
-                    to_lines: new Set()
-                };
-                nodes.set(child, child_info);
-            }
-            child_info.parents.add(parent);
+            ensure_init(child);
+            nodes.get(child).parents.add(parent);
         };
         let add_edge = (parent, child, line) => {
             add_child(parent, child);
@@ -198,13 +189,7 @@ body {
                 add_edge(box, child, line);
             } else {
                 // root
-                nodes.set(node, {
-                    node: node,
-                    children: new Set(),
-                    parents: new Set(),
-                    from_lines: new Set(),
-                    to_lines: new Set()
-                });
+                init_node(node);
             }
         }
 

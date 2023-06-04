@@ -98,33 +98,24 @@ body {
 
         let svg_container = document.querySelector('svg');
         let nodes = new Map();
+        let init_node = node => {
+            nodes.set(node, {
+                node: node,
+                children: new Set(),
+                parents: new Set(),
+                from_lines: new Set(),
+                to_lines: new Set()
+            });
+        };
+        let If = cond => { return { then: eff => cond && eff() } };
+        let ensure_init = node => If(nodes.get(node) === undefined).then(() => init_node(node));
         let add_child = (parent, child) => {
-            let parent_info = nodes.get(parent);
-            if (parent_info === undefined) {
-                parent_info = {
-                    node: parent,
-                    children: new Set(),
-                    parents: new Set(),
-                    from_lines: new Set(),
-                    to_lines: new Set()
-                };
-                nodes.set(parent, parent_info);
-            }
-            parent_info.children.add(child);
+            ensure_init(parent); // probably redundant
+            nodes.get(parent).children.add(child);
         };
         let add_parent = (child, parent) => {
-            let child_info = nodes.get(child);
-            if (child_info === undefined) {
-                child_info = {
-                    node: child,
-                    children: new Set(),
-                    parents: new Set(),
-                    from_lines: new Set(),
-                    to_lines: new Set()
-                };
-                nodes.set(child, child_info);
-            }
-            child_info.parents.add(parent);
+            ensure_init(child);
+            nodes.get(child).parents.add(parent);
         };
         let add_edge = (parent, child, line) => {
             add_child(parent, child);
@@ -159,13 +150,7 @@ body {
                 add_edge(box, child, line);
             } else {
                 // root
-                nodes.set(node, {
-                    node: node,
-                    children: new Set(),
-                    parents: new Set(),
-                    from_lines: new Set(),
-                    to_lines: new Set()
-                });
+                init_node(node);
             }
         }
 
