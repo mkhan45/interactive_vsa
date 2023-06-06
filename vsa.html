@@ -6,10 +6,17 @@
         <div class="svg-container"><svg></svg></div>
         <div class="vsa" id="root">
             
+                <div class="union">
+                    <div class="box">
+                        <span class="op">∪</span>
+                        <div class="union-label">StringConst("First Last") → StringConst("F L")</div>
+                    </div>
+                    <div class="join-children">
+                        
                 <div class="join">
                     <div class="box">
                         <span class="op">Concat</span>
-                        <div class="join-label">StringConst("First Last") → StringConst("FL")</div>
+                        <div class="join-label">StringConst("First Last") → StringConst("F L")</div>
                     </div>
                     <div class="join-children">
                         
@@ -26,7 +33,7 @@
                         <div class="join-label">StringConst("First Last") → StringConst("F")</div>
                     </div>
                     <div class="join-children">
-                        <div class="leaf box" id='93959244274928'><span class="lit">0</span></div> <div class="leaf box" id='93959244102976'><span class="lit">1</span></div>
+                        <div class="leaf box" id='94519787877600'><span class="lit">0</span></div> <div class="leaf box" id='94519787918288'><span class="lit">1</span></div>
                     </div>
                 </div>
                 
@@ -35,16 +42,86 @@
                 <div class="join">
                     <div class="box">
                         <span class="op">Slice</span>
+                        <div class="join-label">StringConst("First Last") → StringConst(" L")</div>
+                    </div>
+                    <div class="join-children">
+                        <div class="leaf box" id='94519787940752'><span class="lit">X.find(' ', 0)</span></div> <div class="leaf box" id='94519788020240'><span class="lit">X.find_end('[A-Z]', 1)</span></div>
+                    </div>
+                </div>
+                
+                    </div>
+                </div>
+                  
+                <div class="join">
+                    <div class="box">
+                        <span class="op">Concat</span>
+                        <div class="join-label">StringConst("First Last") → StringConst("F L")</div>
+                    </div>
+                    <div class="join-children">
+                        
+                <div class="join">
+                    <div class="box">
+                        <span class="op">Concat</span>
+                        <div class="join-label">StringConst("First Last") → StringConst("F ")</div>
+                    </div>
+                    <div class="join-children">
+                        
+                <div class="union">
+                    <div class="box">
+                        <span class="op">∪</span>
+                        <div class="union-label">StringConst("First Last") → StringConst("F")</div>
+                    </div>
+                    <div class="join-children">
+                        
+                <div class="join">
+                    <div class="box">
+                        <span class="op">Slice</span>
+                        <div class="join-label">StringConst("First Last") → StringConst("F")</div>
+                    </div>
+                    <div class="join-children">
+                        <div class="leaf box" id='94519786945936'><span class="lit">0</span></div> <div class="leaf box" id='94519787871376'><span class="lit">1</span></div>
+                    </div>
+                </div>
+                
+                    </div>
+                </div> 
+                <div class="union">
+                    <div class="box">
+                        <span class="op">∪</span>
+                        <div class="union-label">StringConst("First Last") → StringConst(" ")</div>
+                    </div>
+                    <div class="join-children">
+                        
+                <div class="join">
+                    <div class="box">
+                        <span class="op">Slice</span>
+                        <div class="join-label">StringConst("First Last") → StringConst(" ")</div>
+                    </div>
+                    <div class="join-children">
+                        <div class="leaf box" id='94519787870432'><span class="lit">X.find(' ', 0)</span></div> <div class="leaf box" id='94519787968880'><span class="lit">X.find_end(' ', 0)</span></div>
+                    </div>
+                </div>
+                
+                    </div>
+                </div>
+                    </div>
+                </div>
+                 
+                <div class="join">
+                    <div class="box">
+                        <span class="op">Slice</span>
                         <div class="join-label">StringConst("First Last") → StringConst("L")</div>
                     </div>
                     <div class="join-children">
-                        <div class="leaf box" id='93959244276608'><span class="lit">X.find_end(' ', 0)</span></div> <div class="leaf box" id='93959244277392'><span class="lit">X.find_end('[A-Z]', 1)</span></div>
+                        <div class="leaf box" id='94519787793264'><span class="lit">X.find_end(' ', 0)</span></div> <div class="leaf box" id='94519787856160'><span class="lit">X.find_end('[A-Z]', 1)</span></div>
                     </div>
                 </div>
                 
                     </div>
                 </div>
                 
+                    </div>
+                </div>
         </div>
     </body>
     <style>
@@ -52,7 +129,7 @@ body {
     width: 100vw;
     height: 100vh;
     user-select: none;
-    transform: scale(1);
+    transform: scale(0.8);
 }
 .svg-container {
     position: absolute;
@@ -265,7 +342,18 @@ body {
                 child_x += branch_width;
             }
         }
+        function get_depth(node) {
+            let children = nodes.get(node).children;
+            if (children.size === 0) {
+                return 1;
+            } else {
+                return 1 + Math.max(...[...children].map(c => get_depth(c)));
+            }
+        }
 
-        place(root_vsa, window.innerWidth / 2 - root_vsa.offsetWidth / 2, 100);
+        place(root_vsa, node_widths.get(root_vsa) / 2, 100);
+        let depth = get_depth(root_vsa);
+        body.style.height = (depth * branch_height + 100) + 'px';
+        body.style.width = (node_widths.get(root_vsa) + 500) + 'px';
     </script>
 </html>

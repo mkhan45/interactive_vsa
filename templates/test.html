@@ -13,7 +13,10 @@ body {
     width: 100vw;
     height: 100vh;
     user-select: none;
-    transform: scale(1);
+    transform: scale(1.0);
+    /* TODO: access scale via https://css-tricks.com/get-value-of-css-rotation-through-javascript/ */
+    /* Then, set scale through {scrolling | buttons}, and make sure mouse drag accounts for it */
+    /* Also make it easier to translate somehow */
 }
 .svg-container {
     position: absolute;
@@ -226,7 +229,18 @@ body {
                 child_x += branch_width;
             }
         }
+        function get_depth(node) {
+            let children = nodes.get(node).children;
+            if (children.size === 0) {
+                return 1;
+            } else {
+                return 1 + Math.max(...[...children].map(c => get_depth(c)));
+            }
+        }
 
-        place(root_vsa, window.innerWidth / 2 - root_vsa.offsetWidth / 2, 100);
+        place(root_vsa, node_widths.get(root_vsa) / 2, 100);
+        let depth = get_depth(root_vsa);
+        body.style.height = (depth * branch_height + 100) + 'px';
+        body.style.width = (node_widths.get(root_vsa) + 500) + 'px';
     </script>
 </html>
