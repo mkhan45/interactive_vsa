@@ -38,8 +38,6 @@ body {
 .vsa {
   font-family: monospace;
   font-size: 1.5em;
-  max-width: 100vw;
-  font-size: calc(1vw);
   position: relative;
 }
 
@@ -111,8 +109,23 @@ body {
                 to_lines: new Set()
             });
         };
-        let If = cond => { return { then: eff => cond && eff() } };
-        let ensure_init = node => If(nodes.get(node) === undefined).then(() => init_node(node));
+        let If = cond => {
+            let ret = f => (typeof f === 'function') ? f() : f;
+            if (cond) {
+                return { then: te => {
+                    return {
+                        else: fe => ret(te)
+                    };
+                }};
+            } else {
+                return { then: te => {
+                    return {
+                        else: fe => ret(fe)
+                    };
+                }};
+            }
+        };
+        let ensure_init = node => If(nodes.get(node) === undefined).then(() => init_node(node)).else(() => null);
         let add_child = (parent, child) => {
             ensure_init(parent); // probably redundant
             return nodes.get(parent).children.add(child);
@@ -161,13 +174,9 @@ body {
             if (box !== null) {
                 let child = node;
                 let line = svg_container.appendChild(document.createElementNS('http://www.w3.org/2000/svg', 'line'));
-                line.setAttribute('x1', box.offsetLeft + box.offsetWidth / 2);
-                line.setAttribute('y1', box.offsetTop + box.offsetHeight);
-                line.setAttribute('x2', child.offsetLeft + child.offsetWidth / 2);
-                line.setAttribute('y2', child.offsetTop);
                 line.setAttribute('stroke', 'black');
-
                 add_edge(box, child, line);
+                move_node(child, box.offsetLeft + box.offsetWidth / 2, box.offsetTop + box.offsetHeight);
             } else {
                 // root
                 root_vsa = node;
@@ -181,11 +190,11 @@ body {
 
             // make node draggable
             node.onmousedown = (e) => {
-                let x = e.clientX;
-                let y = e.clientY;
+                let x = e.clientX + window.scrollX;
+                let y = e.clientY + window.scrollY;
                 let move = (e) => {
-                    x = e.clientX;
-                    y = e.clientY;
+                    x = e.clientX + window.scrollX;
+                    y = e.clientY + window.scrollY;
                     move_node(node, x - node.offsetWidth / 2, y - node.offsetHeight / 2);
                 };
                 let up = (e) => {
@@ -204,7 +213,7 @@ body {
             let children = nodes.get(node).children;
             let child_widths = [...children].map(c => get_node_width(c));
             let total_child_width = child_widths.reduce((x, y) => x + y, 0);
-            if (total_child_width === 0) {
+            if (total_child_width < node.offsetWidth) {
                 node_widths.set(node, node.offsetWidth + 15);
             } else {
                 node_widths.set(node, Math.max(total_child_width, node.offsetWidth + 15));
@@ -214,20 +223,45 @@ body {
         }
         get_node_width(root_vsa);
         function place(node, x, y) {
-            move_node(node, x, y);
-            let center_x = x + node.offsetWidth / 2;
+            let center_x = x + node_widths.get(node) / 2;
+            move_node(node, center_x, y);
 
-            let children = nodes.get(node).children;
-            let child_widths = [...children].map(c => node_widths.get(c));
-            let total_branch_width = child_widths.reduce((x, y) => x + y, 0);
-            let child_x = center_x - total_branch_width / 2;
+            let children = [...nodes.get(node).children];
+            let child_widths = children.map(c => node_widths.get(c));
+            let total_child_width = child_widths.reduce((x, y) => x + y, 0);
             let child_y = y + branch_height;
-            console.log(children, total_branch_width, x, y, child_x, child_y);
+            if (total_child_width < node_widths.get(node)) {
+                console.log(node);
+                console.log(total_child_width, center_x);
+                let child_x = center_x + node_widths.get(node) / 2 - total_child_width / 2 - 7.5 * (children.length + 2);
+                for (let child of children) {
+                    let branch_width = node_widths.get(child);
+                    place(child, child_x, child_y);
+                    console.log(child);
+                    child_x += branch_width;
+                }
+            } else {
+                let total_branch_width = node_widths.get(node);
+                let child_x = center_x - total_branch_width / 2;
+                for (let child of children) {
+                    let branch_width = node_widths.get(child);
+                    place(child, child_x, child_y);
+                    child_x += branch_width;
+                }
+            }
+            /*
+            let total_branch_width =
+                If(total_child_width < node_widths.get(node))
+                    .then(total_child_width)
+                    .else(node_widths.get(node));
+            let child_x = center_x - total_branch_width / 2;
+            console.log(total_branch_width, total_child_width, node_widths.get(node), center_x, child_x);
             for (let child of children) {
                 let branch_width = node_widths.get(child);
                 place(child, child_x, child_y);
                 child_x += branch_width;
             }
+            */
         }
         function get_depth(node) {
             let children = nodes.get(node).children;
@@ -238,9 +272,10 @@ body {
             }
         }
 
-        place(root_vsa, node_widths.get(root_vsa) / 2, 100);
+        place(root_vsa, 0, 100);
         let depth = get_depth(root_vsa);
+        let body = document.querySelector('body');
         body.style.height = (depth * branch_height + 100) + 'px';
-        body.style.width = (node_widths.get(root_vsa) + 500) + 'px';
+        body.style.width = (node_widths.get(root_vsa) * 1.5) + 'px';
     </script>
 </html>
