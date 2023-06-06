@@ -42,7 +42,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let template = VSATemplate {
         vsa_html: flat_vsa.to_html(&Lit::StringConst("First Last".to_string())),
     };
-    let file = std::fs::File::create("vsa.html")?;
+    let file = std::fs::File::create("docs/bad_vsa.html")?;
     let mut writer = std::io::BufWriter::new(file);
     writer.write_all(template.render().unwrap().as_bytes())?;
 
