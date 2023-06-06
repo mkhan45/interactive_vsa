@@ -26,11 +26,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let examples = vec![
         (
             Lit::StringConst("First Last".to_string()),
-            Lit::StringConst("F.L.".to_string()),
+            Lit::StringConst("F L".to_string()),
         ),
         (
             Lit::StringConst("Another Name".to_string()),
-            Lit::StringConst("A.N.".to_string()),
+            Lit::StringConst("A N".to_string()),
         ),
     ];
 

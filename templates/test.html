@@ -13,6 +13,7 @@ body {
     width: 100vw;
     height: 100vh;
     user-select: none;
+    transform: scale(1);
 }
 .svg-container {
     position: absolute;
@@ -193,24 +194,39 @@ body {
             };
         }
 
-        const branch_height = 200;
+        const branch_height = root_vsa.offsetHeight * 1.5;
+        // might need to start from the bottom up
+        let node_widths = new Map();
+        function get_node_width(node) {
+            let children = nodes.get(node).children;
+            let child_widths = [...children].map(c => get_node_width(c));
+            let total_child_width = child_widths.reduce((x, y) => x + y, 0);
+            if (total_child_width === 0) {
+                node_widths.set(node, node.offsetWidth + 15);
+            } else {
+                node_widths.set(node, Math.max(total_child_width, node.offsetWidth + 15));
+            }
+
+            return node_widths.get(node);
+        }
+        get_node_width(root_vsa);
         function place(node, x, y) {
             move_node(node, x, y);
             let center_x = x + node.offsetWidth / 2;
 
             let children = nodes.get(node).children;
-            let child_widths = [...children].map(c => c.offsetWidth * 1.25)
+            let child_widths = [...children].map(c => node_widths.get(c));
             let total_branch_width = child_widths.reduce((x, y) => x + y, 0);
-            let child_x = center_x - total_branch_width / children.size;
+            let child_x = center_x - total_branch_width / 2;
             let child_y = y + branch_height;
             console.log(children, total_branch_width, x, y, child_x, child_y);
             for (let child of children) {
-                let branch_width = child.offsetWidth * 1.5;
+                let branch_width = node_widths.get(child);
                 place(child, child_x, child_y);
                 child_x += branch_width;
             }
         }
 
-        place(root_vsa, window.innerWidth / 2 - 200, 100);
+        place(root_vsa, window.innerWidth / 2 - root_vsa.offsetWidth / 2, 100);
     </script>
 </html>

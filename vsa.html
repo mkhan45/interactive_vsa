@@ -9,14 +9,14 @@
                 <div class="union">
                     <div class="box">
                         <span class="op">∪</span>
-                        <div class="union-label">StringConst("First Last") → StringConst("F.L.")</div>
+                        <div class="union-label">StringConst("First Last") → StringConst("F L")</div>
                     </div>
                     <div class="join-children">
                         
                 <div class="join">
                     <div class="box">
                         <span class="op">Concat</span>
-                        <div class="join-label">StringConst("First Last") → StringConst("F.L.")</div>
+                        <div class="join-label">StringConst("First Last") → StringConst("F L")</div>
                     </div>
                     <div class="join-children">
                         
@@ -33,43 +33,19 @@
                         <div class="join-label">StringConst("First Last") → StringConst("F")</div>
                     </div>
                     <div class="join-children">
-                        <div class="leaf box" id='94657238243872'><span class="lit">0</span></div> <div class="leaf box" id='94657238248800'><span class="lit">1</span></div>
+                        <div class="leaf box" id='94197354289616'><span class="lit">0</span></div> <div class="leaf box" id='94197354401072'><span class="lit">1</span></div>
                     </div>
                 </div>
                 
                     </div>
                 </div> 
-                <div class="union">
-                    <div class="box">
-                        <span class="op">∪</span>
-                        <div class="union-label">StringConst("First Last") → StringConst(".L.")</div>
-                    </div>
-                    <div class="join-children">
-                        
-                <div class="join">
-                    <div class="box">
-                        <span class="op">Concat</span>
-                        <div class="join-label">StringConst("First Last") → StringConst(".L.")</div>
-                    </div>
-                    <div class="join-children">
-                        <div class="leaf box" id='94657238249264'><span class="lit">'.'</span></div> 
-                <div class="join">
-                    <div class="box">
-                        <span class="op">Concat</span>
-                        <div class="join-label">StringConst("First Last") → StringConst("L.")</div>
-                    </div>
-                    <div class="join-children">
-                        
                 <div class="join">
                     <div class="box">
                         <span class="op">Slice</span>
-                        <div class="join-label">StringConst("First Last") → StringConst("L")</div>
+                        <div class="join-label">StringConst("First Last") → StringConst(" L")</div>
                     </div>
                     <div class="join-children">
-                        <div class="leaf box" id='94657238249232'><span class="lit">X.find_end(' ', 0)</span></div> <div class="leaf box" id='94657238238912'><span class="lit">X.find_end('[A-Z]', 1)</span></div>
-                    </div>
-                </div>
-                 <div class="leaf box" id='94657238247584'><span class="lit">'.'</span></div>
+                        <div class="leaf box" id='94197354435280'><span class="lit">X.find(' ', 0)</span></div> <div class="leaf box" id='94197354390816'><span class="lit">X.find_end('[A-Z]', 1)</span></div>
                     </div>
                 </div>
                 
@@ -79,49 +55,14 @@
                 <div class="join">
                     <div class="box">
                         <span class="op">Concat</span>
-                        <div class="join-label">StringConst("First Last") → StringConst(".L.")</div>
+                        <div class="join-label">StringConst("First Last") → StringConst("F L")</div>
                     </div>
                     <div class="join-children">
                         
                 <div class="join">
                     <div class="box">
                         <span class="op">Concat</span>
-                        <div class="join-label">StringConst("First Last") → StringConst(".L")</div>
-                    </div>
-                    <div class="join-children">
-                        <div class="leaf box" id='94657238172272'><span class="lit">'.'</span></div> 
-                <div class="join">
-                    <div class="box">
-                        <span class="op">Slice</span>
-                        <div class="join-label">StringConst("First Last") → StringConst("L")</div>
-                    </div>
-                    <div class="join-children">
-                        <div class="leaf box" id='94657237457248'><span class="lit">X.find_end(' ', 0)</span></div> <div class="leaf box" id='94657238012736'><span class="lit">X.find_end('[A-Z]', 1)</span></div>
-                    </div>
-                </div>
-                
-                    </div>
-                </div>
-                 <div class="leaf box" id='94657237927792'><span class="lit">'.'</span></div>
-                    </div>
-                </div>
-                
-                    </div>
-                </div>
-                    </div>
-                </div>
-                    
-                <div class="join">
-                    <div class="box">
-                        <span class="op">Concat</span>
-                        <div class="join-label">StringConst("First Last") → StringConst("F.L.")</div>
-                    </div>
-                    <div class="join-children">
-                        
-                <div class="join">
-                    <div class="box">
-                        <span class="op">Concat</span>
-                        <div class="join-label">StringConst("First Last") → StringConst("F.")</div>
+                        <div class="join-label">StringConst("First Last") → StringConst("F ")</div>
                     </div>
                     <div class="join-children">
                         
@@ -138,134 +79,31 @@
                         <div class="join-label">StringConst("First Last") → StringConst("F")</div>
                     </div>
                     <div class="join-children">
-                        <div class="leaf box" id='94657237924336'><span class="lit">0</span></div> <div class="leaf box" id='94657237906512'><span class="lit">1</span></div>
-                    </div>
-                </div>
-                
-                    </div>
-                </div> <div class="leaf box" id='94657237895632'><span class="lit">'.'</span></div>
-                    </div>
-                </div>
-                 
-                <div class="join">
-                    <div class="box">
-                        <span class="op">Concat</span>
-                        <div class="join-label">StringConst("First Last") → StringConst("L.")</div>
-                    </div>
-                    <div class="join-children">
-                        
-                <div class="join">
-                    <div class="box">
-                        <span class="op">Slice</span>
-                        <div class="join-label">StringConst("First Last") → StringConst("L")</div>
-                    </div>
-                    <div class="join-children">
-                        <div class="leaf box" id='94657237906672'><span class="lit">X.find_end(' ', 0)</span></div> <div class="leaf box" id='94657238009440'><span class="lit">X.find_end('[A-Z]', 1)</span></div>
-                    </div>
-                </div>
-                 <div class="leaf box" id='94657237581536'><span class="lit">'.'</span></div>
-                    </div>
-                </div>
-                
-                    </div>
-                </div>
-                    
-                <div class="join">
-                    <div class="box">
-                        <span class="op">Concat</span>
-                        <div class="join-label">StringConst("First Last") → StringConst("F.L.")</div>
-                    </div>
-                    <div class="join-children">
-                        
-                <div class="union">
-                    <div class="box">
-                        <span class="op">∪</span>
-                        <div class="union-label">StringConst("First Last") → StringConst("F.L")</div>
-                    </div>
-                    <div class="join-children">
-                        
-                <div class="join">
-                    <div class="box">
-                        <span class="op">Concat</span>
-                        <div class="join-label">StringConst("First Last") → StringConst("F.L")</div>
-                    </div>
-                    <div class="join-children">
-                        
-                <div class="union">
-                    <div class="box">
-                        <span class="op">∪</span>
-                        <div class="union-label">StringConst("First Last") → StringConst("F")</div>
-                    </div>
-                    <div class="join-children">
-                        
-                <div class="join">
-                    <div class="box">
-                        <span class="op">Slice</span>
-                        <div class="join-label">StringConst("First Last") → StringConst("F")</div>
-                    </div>
-                    <div class="join-children">
-                        <div class="leaf box" id='94657237463776'><span class="lit">0</span></div> <div class="leaf box" id='94657237995104'><span class="lit">1</span></div>
+                        <div class="leaf box" id='94197354339664'><span class="lit">0</span></div> <div class="leaf box" id='94197354273440'><span class="lit">1</span></div>
                     </div>
                 </div>
                 
                     </div>
                 </div> 
-                <div class="join">
-                    <div class="box">
-                        <span class="op">Concat</span>
-                        <div class="join-label">StringConst("First Last") → StringConst(".L")</div>
-                    </div>
-                    <div class="join-children">
-                        <div class="leaf box" id='94657237919120'><span class="lit">'.'</span></div> 
-                <div class="join">
-                    <div class="box">
-                        <span class="op">Slice</span>
-                        <div class="join-label">StringConst("First Last") → StringConst("L")</div>
-                    </div>
-                    <div class="join-children">
-                        <div class="leaf box" id='94657237941776'><span class="lit">X.find_end(' ', 0)</span></div> <div class="leaf box" id='94657237457408'><span class="lit">X.find_end('[A-Z]', 1)</span></div>
-                    </div>
-                </div>
-                
-                    </div>
-                </div>
-                
-                    </div>
-                </div>
-                  
-                <div class="join">
-                    <div class="box">
-                        <span class="op">Concat</span>
-                        <div class="join-label">StringConst("First Last") → StringConst("F.L")</div>
-                    </div>
-                    <div class="join-children">
-                        
-                <div class="join">
-                    <div class="box">
-                        <span class="op">Concat</span>
-                        <div class="join-label">StringConst("First Last") → StringConst("F.")</div>
-                    </div>
-                    <div class="join-children">
-                        
                 <div class="union">
                     <div class="box">
                         <span class="op">∪</span>
-                        <div class="union-label">StringConst("First Last") → StringConst("F")</div>
+                        <div class="union-label">StringConst("First Last") → StringConst(" ")</div>
                     </div>
                     <div class="join-children">
                         
                 <div class="join">
                     <div class="box">
                         <span class="op">Slice</span>
-                        <div class="join-label">StringConst("First Last") → StringConst("F")</div>
+                        <div class="join-label">StringConst("First Last") → StringConst(" ")</div>
                     </div>
                     <div class="join-children">
-                        <div class="leaf box" id='94657237998400'><span class="lit">0</span></div> <div class="leaf box" id='94657237061248'><span class="lit">1</span></div>
+                        <div class="leaf box" id='94197353743248'><span class="lit">X.find(' ', 0)</span></div> <div class="leaf box" id='94197353770832'><span class="lit">X.find_end(' ', 0)</span></div>
                     </div>
                 </div>
                 
                     </div>
-                </div> <div class="leaf box" id='94657237881520'><span class="lit">'.'</span></div>
+                </div>
                     </div>
                 </div>
                  
@@ -275,15 +113,10 @@
                         <div class="join-label">StringConst("First Last") → StringConst("L")</div>
                     </div>
                     <div class="join-children">
-                        <div class="leaf box" id='94657237996384'><span class="lit">X.find_end(' ', 0)</span></div> <div class="leaf box" id='94657237486480'><span class="lit">X.find_end('[A-Z]', 1)</span></div>
+                        <div class="leaf box" id='94197354444912'><span class="lit">X.find_end(' ', 0)</span></div> <div class="leaf box" id='94197354257616'><span class="lit">X.find_end('[A-Z]', 1)</span></div>
                     </div>
                 </div>
                 
-                    </div>
-                </div>
-                
-                    </div>
-                </div> <div class="leaf box" id='94657237893936'><span class="lit">'.'</span></div>
                     </div>
                 </div>
                 
@@ -296,6 +129,7 @@ body {
     width: 100vw;
     height: 100vh;
     user-select: none;
+    transform: scale(1);
 }
 .svg-container {
     position: absolute;
@@ -476,24 +310,39 @@ body {
             };
         }
 
-        const branch_height = 200;
+        const branch_height = root_vsa.offsetHeight * 1.5;
+        // might need to start from the bottom up
+        let node_widths = new Map();
+        function get_node_width(node) {
+            let children = nodes.get(node).children;
+            let child_widths = [...children].map(c => get_node_width(c));
+            let total_child_width = child_widths.reduce((x, y) => x + y, 0);
+            if (total_child_width === 0) {
+                node_widths.set(node, node.offsetWidth + 15);
+            } else {
+                node_widths.set(node, Math.max(total_child_width, node.offsetWidth + 15));
+            }
+
+            return node_widths.get(node);
+        }
+        get_node_width(root_vsa);
         function place(node, x, y) {
             move_node(node, x, y);
             let center_x = x + node.offsetWidth / 2;
 
             let children = nodes.get(node).children;
-            let child_widths = [...children].map(c => c.offsetWidth * 1.25)
+            let child_widths = [...children].map(c => node_widths.get(c));
             let total_branch_width = child_widths.reduce((x, y) => x + y, 0);
-            let child_x = center_x - total_branch_width / children.size;
+            let child_x = center_x - total_branch_width / 2;
             let child_y = y + branch_height;
             console.log(children, total_branch_width, x, y, child_x, child_y);
             for (let child of children) {
-                let branch_width = child.offsetWidth * 1.5;
+                let branch_width = node_widths.get(child);
                 place(child, child_x, child_y);
                 child_x += branch_width;
             }
         }
 
-        place(root_vsa, window.innerWidth / 2 - 200, 100);
+        place(root_vsa, window.innerWidth / 2 - root_vsa.offsetWidth / 2, 100);
     </script>
 </html>
