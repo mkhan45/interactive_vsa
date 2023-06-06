@@ -9,11 +9,11 @@ use itertools::iproduct;
 use lru::LruCache;
 use regex::Regex;
 
-pub mod vsa;
 pub mod bank;
+pub mod vsa;
 
-use vsa::{Fun, Lit, Cost};
 use bank::Bank;
+use vsa::{Cost, Fun, Lit};
 
 use lazy_static::lazy_static;
 
@@ -21,7 +21,13 @@ type VSA = vsa::VSA<Lit, Fun>;
 type AST = vsa::AST<Lit, Fun>;
 
 macro_rules! loc_pat {
-    () => { AST::Lit(Lit::LocConst(_) | Lit::LocEnd) | AST::App { fun: Fun::Find | Fun::LocAdd | Fun::LocSub, .. } };
+    () => {
+        AST::Lit(Lit::LocConst(_) | Lit::LocEnd)
+            | AST::App {
+                fun: Fun::Find | Fun::LocAdd | Fun::LocSub,
+                ..
+            }
+    };
 }
 
 lazy_static! {
@@ -110,8 +116,10 @@ pub fn top_down(examples: &[(Lit, Lit)]) -> (VSA, Option<AST>) {
         regex_bank.size_mut(1).push(AST::Lit(prim.clone()));
     }
 
-    let test_prog = AST::Python { 
-        code: "X.upper()".to_string(), input: Box::new(AST::Lit(Lit::Input)), typ: vsa::Typ::Str 
+    let test_prog = AST::Python {
+        code: "X.upper()".to_string(),
+        input: Box::new(AST::Lit(Lit::Input)),
+        typ: vsa::Typ::Str,
     };
     bank.size_mut(1).push(test_prog.clone());
     let outputs = examples.iter().map(|(inp, _)| test_prog.eval(inp));
@@ -120,7 +128,9 @@ pub fn top_down(examples: &[(Lit, Lit)]) -> (VSA, Option<AST>) {
         Rc::new(VSA::singleton(test_prog.clone())),
     );
 
-    let enable_bools = examples.iter().any(|(_, out)| matches!(out, Lit::BoolConst(_)));
+    let enable_bools = examples
+        .iter()
+        .any(|(_, out)| matches!(out, Lit::BoolConst(_)));
 
     let mut size = 1;
     let inps = examples.iter().map(|(inp, _)| inp);
@@ -133,7 +143,7 @@ pub fn top_down(examples: &[(Lit, Lit)]) -> (VSA, Option<AST>) {
             &mut all_cache,
             &mut bank,
             &mut regex_bank,
-            enable_bools
+            enable_bools,
         );
         // dbg!(&bank);
         // dbg!(bank.total_entries());
@@ -190,8 +200,10 @@ fn learn(inp: &Lit, out: &Lit, cache: &mut HashMap<Lit, Rc<VSA>>, bank: &Bank<AS
 
     macro_rules! universal_witness {
         ($p:pat) => {
-            bank.entries.iter().flat_map(|entry| entry.iter().filter(|ast| matches!(ast, $p)))
-        }
+            bank.entries
+                .iter()
+                .flat_map(|entry| entry.iter().filter(|ast| matches!(ast, $p)))
+        };
     }
 
     macro_rules! multi_match {
@@ -456,18 +468,18 @@ fn bottom_up<'a>(
                     strings_of_size(rhs_size).chain(regexes_of_size(rhs_size)),
                     locs_of_size(index_size)
                 )
-                    .flat_map(|(lhs, rhs, index)| {
-                        [
-                            AST::App {
-                                fun: Fun::Find,
-                                args: vec![lhs.clone(), rhs.clone(), index.clone()],
-                            },
-                            AST::App {
-                                fun: Fun::FindEnd,
-                                args: vec![lhs.clone(), rhs.clone(), index.clone()],
-                            },
-                        ]
-                    })
+                .flat_map(|(lhs, rhs, index)| {
+                    [
+                        AST::App {
+                            fun: Fun::Find,
+                            args: vec![lhs.clone(), rhs.clone(), index.clone()],
+                        },
+                        AST::App {
+                            fun: Fun::FindEnd,
+                            args: vec![lhs.clone(), rhs.clone(), index.clone()],
+                        },
+                    ]
+                })
             })
         });
 

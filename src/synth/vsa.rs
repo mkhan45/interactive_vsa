@@ -14,7 +14,7 @@ where
     Leaf(HashSet<Rc<AST<L, F>>>),
     Union(Vec<Rc<VSA<L, F>>>),
     Join { op: F, children: Vec<Rc<VSA<L, F>>> },
-    Unlearned { goal: L }
+    Unlearned { goal: L },
 }
 
 impl<L, F> Default for VSA<L, F>
@@ -244,7 +244,7 @@ where
         }
     }
 
-    pub fn flatten(vsa: Rc<VSA<L, F>>) -> Rc<VSA<L,F>> {
+    pub fn flatten(vsa: Rc<VSA<L, F>>) -> Rc<VSA<L, F>> {
         match vsa.as_ref() {
             VSA::Leaf(s) => Rc::new(VSA::Leaf(s.clone())),
             VSA::Union(s) if s.iter().filter(|vsa| !vsa.is_empty()).count() == 1 => {
@@ -252,24 +252,44 @@ where
                 VSA::flatten(vsa.clone())
             }
             VSA::Union(s) => {
-                let mut flattened: Vec<_> = s.iter().flat_map(|vsa| {
-                    match vsa.as_ref() {
+                let mut flattened: Vec<_> = s
+                    .iter()
+                    .flat_map(|vsa| match vsa.as_ref() {
                         VSA::Union(s) => {
-                            let mut nv: Vec<_> = s.iter().map(|vsa| VSA::flatten(vsa.clone())).collect();
+                            let mut nv: Vec<_> =
+                                s.iter().map(|vsa| VSA::flatten(vsa.clone())).collect();
                             nv.dedup();
                             nv
-                        },
-                        _ => vec![vsa.clone()]
-                    }
-                }).collect();
+                        }
+                        _ => vec![vsa.clone()],
+                    })
+                    .filter_map(|vsa| match vsa.as_ref() {
+                        VSA::Leaf(asts) => {
+                            let nasts: HashSet<_, _> = asts
+                                .iter()
+                                .filter(|ast| !s.iter().any(|vsa| vsa.contains(ast)))
+                                .cloned()
+                                .collect();
+                            if nasts.is_empty() {
+                                None
+                            } else {
+                                Some(Rc::new(VSA::Leaf(nasts)))
+                            }
+                        }
+                        _ => Some(vsa.clone()),
+                    })
+                    .collect();
                 flattened.dedup();
                 Rc::new(VSA::Union(flattened))
             }
             VSA::Join { op, children } => {
-                let children = children.iter().map(|vsa| VSA::flatten(vsa.clone())).collect();
+                let children = children
+                    .iter()
+                    .map(|vsa| VSA::flatten(vsa.clone()))
+                    .collect();
                 Rc::new(VSA::Join { op: *op, children })
             }
-            VSA::Unlearned { .. } => vsa
+            VSA::Unlearned { .. } => vsa,
         }
     }
 }
@@ -301,7 +321,7 @@ impl Cost for Fun {
     }
 }
 
-pub trait InputLit: {
+pub trait InputLit {
     fn is_input(&self) -> bool;
     fn from_python(pyobj: &pyo3::PyAny) -> Self;
 }
@@ -360,9 +380,16 @@ where
     L: std::hash::Hash + std::fmt::Debug + InputLit + pyo3::ToPyObject,
     F: Language<L> + std::hash::Hash + std::fmt::Debug,
 {
-    App { fun: F, args: Vec<AST<L, F>> },
+    App {
+        fun: F,
+        args: Vec<AST<L, F>>,
+    },
     Lit(L),
-    Python { code: String, input: Box<AST<L, F>>, typ: Typ },
+    Python {
+        code: String,
+        input: Box<AST<L, F>>,
+        typ: Typ,
+    },
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
@@ -445,13 +472,15 @@ impl Language<Lit> for Fun {
             Fun::Equal => match (args, input) {
                 ([Lit::LocConst(a), Lit::LocConst(b)], _) => Lit::BoolConst(a == b),
                 // ([Lit::LocEnd, Lit::LocEnd], _) => Lit::BoolConst(true),
-                ([Lit::LocConst(a), Lit::LocEnd] | [Lit::LocEnd, Lit::LocConst(a)], Lit::StringConst(s)) => {
-                    Lit::BoolConst(*a == s.len())
-                }
+                (
+                    [Lit::LocConst(a), Lit::LocEnd] | [Lit::LocEnd, Lit::LocConst(a)],
+                    Lit::StringConst(s),
+                ) => Lit::BoolConst(*a == s.len()),
                 ([Lit::StringConst(a), Lit::StringConst(b)], _) => Lit::BoolConst(a == b),
-                ([Lit::Input, Lit::StringConst(b)] | [Lit::StringConst(b), Lit::Input], Lit::StringConst(s)) => {
-                    Lit::BoolConst(b == s)
-                }
+                (
+                    [Lit::Input, Lit::StringConst(b)] | [Lit::StringConst(b), Lit::Input],
+                    Lit::StringConst(s),
+                ) => Lit::BoolConst(b == s),
                 _ => Lit::BoolConst(false),
             },
             Fun::Lowercase => match args {

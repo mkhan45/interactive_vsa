@@ -3,10 +3,10 @@
 0. VSA HTML
 - [X] Flatten
 - [X] Remove empty
+- [X] Place nodes in a reasonable starting position
 - [ ] Dedup
     - hard to efficiently reduce a join to a single node
     - use `VSA::contains` to check if siblings contain final AST
-- [ ] Place nodes in a reasonable starting position
 - [ ] Label index of join edges
     - idk how to do ui/ux for this
     - maybe different connection points instead of all at the center
@@ -18,6 +18,7 @@ Current process:
        adjacency, and store an adjacency list
     3. Using the adjacency list, register onclick etc to drag the nodes and update the
        edges
+    4. Place the nodes with dfs
 
 1. General algorithm
 - start with a single node of unlearned with the goal
