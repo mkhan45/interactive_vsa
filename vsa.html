@@ -19,14 +19,14 @@
                         <div class="union-label">StringConst("First Last") → StringConst("F")</div>
                     </div>
                     <div class="join-children">
-                        <div class="leaf box" id='94297205861152'><span class="lit">(X[0..1])</span></div> 
+                        <div class="leaf box" id='94320761522496'><span class="lit">(X[0..1])</span></div> 
                 <div class="join">
                     <div class="box">
                         <span class="op">Slice</span>
                         <div class="join-label">StringConst("First Last") → StringConst("F")</div>
                     </div>
                     <div class="join-children">
-                        <div class="leaf box" id='94297205939440'><span class="lit">0</span></div> <div class="leaf box" id='94297205862192'><span class="lit">1</span></div>
+                        <div class="leaf box" id='94320761527920'><span class="lit">0</span></div> <div class="leaf box" id='94320761525664'><span class="lit">1</span></div>
                     </div>
                 </div>
                 
@@ -38,7 +38,7 @@
                         <div class="join-label">StringConst("First Last") → StringConst("L")</div>
                     </div>
                     <div class="join-children">
-                        <div class="leaf box" id='94297205937056'><span class="lit">X.find_end(' ', 0)</span></div> <div class="leaf box" id='94297205920608'><span class="lit">X.find_end('[A-Z]', 1)</span></div>
+                        <div class="leaf box" id='94320761526320'><span class="lit">X.find_end(' ', 0)</span></div> <div class="leaf box" id='94320761525728'><span class="lit">X.find_end('[A-Z]', 1)</span></div>
                     </div>
                 </div>
                 
@@ -150,7 +150,7 @@ body {
         let ensure_init = node => If(nodes.get(node) === undefined).then(() => init_node(node));
         let add_child = (parent, child) => {
             ensure_init(parent); // probably redundant
-            nodes.get(parent).children.add(child);
+            return nodes.get(parent).children.add(child);
         };
         let add_parent = (child, parent) => {
             ensure_init(child);
@@ -162,6 +162,22 @@ body {
             nodes.get(parent).from_lines.add(line);
             nodes.get(child).to_lines.add(line);
         };
+        let move_node = (node, x, y) => {
+            node.style.left = x + 'px';
+            node.style.top = y + 'px';
+            let node_info = nodes.get(node);
+            let from_lines = node_info.from_lines;
+            let to_lines = node_info.to_lines;
+            for (let line of from_lines) {
+                line.setAttribute('x1', node.offsetLeft + node.offsetWidth / 2);
+                line.setAttribute('y1', node.offsetTop + node.offsetHeight);
+            }
+            for (let line of to_lines) {
+                line.setAttribute('x2', node.offsetLeft + node.offsetWidth / 2);
+                line.setAttribute('y2', node.offsetTop);
+            }
+        };
+        let root_vsa = null;
         function find_parent_box(node) {
             function helper(node) {
                 if (node.classList === undefined) return null;
@@ -189,6 +205,7 @@ body {
                 add_edge(box, child, line);
             } else {
                 // root
+                root_vsa = node;
                 init_node(node);
             }
         }
@@ -204,16 +221,7 @@ body {
                 let move = (e) => {
                     x = e.clientX;
                     y = e.clientY;
-                    node.style.left = x - node.offsetWidth / 2 + 'px';
-                    node.style.top = y - node.offsetHeight / 2 + 'px';
-                    for (let line of from_lines) {
-                        line.setAttribute('x1', node.offsetLeft + node.offsetWidth / 2);
-                        line.setAttribute('y1', node.offsetTop + node.offsetHeight);
-                    }
-                    for (let line of to_lines) {
-                        line.setAttribute('x2', node.offsetLeft + node.offsetWidth / 2);
-                        line.setAttribute('y2', node.offsetTop);
-                    }
+                    move_node(node, x - node.offsetWidth / 2, y - node.offsetHeight / 2);
                 };
                 let up = (e) => {
                     document.removeEventListener('mousemove', move);
@@ -223,5 +231,25 @@ body {
                 document.addEventListener('mouseup', up);
             };
         }
+
+        const branch_height = 200;
+        function place(node, x, y) {
+            move_node(node, x, y);
+            let center_x = x + node.offsetWidth / 2;
+
+            let children = nodes.get(node).children;
+            let child_widths = [...children].map(c => c.offsetWidth * 1.25)
+            let total_branch_width = child_widths.reduce((x, y) => x + y, 0);
+            let child_x = center_x - total_branch_width / children.size;
+            let child_y = y + branch_height;
+            console.log(children, total_branch_width, x, y, child_x, child_y);
+            for (let child of children) {
+                let branch_width = child.offsetWidth * 1.5;
+                place(child, child_x, child_y);
+                child_x += branch_width;
+            }
+        }
+
+        place(root_vsa, window.innerWidth / 2 - 200, 100);
     </script>
 </html>
