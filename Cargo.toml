@@ -6,10 +6,10 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-pyo3 = { version = "0.14.1", features = ["auto-initialize"] }
 itertools = "0.10.5"
 regex = "1.7.1"
 lru = "0.9.0"
 lazy_static = "1.4.0"
 
 askama = "0.12.0"
+rustpython = { git = "https://github.com/RustPython/RustPython", branch = "main" }

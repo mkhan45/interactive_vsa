@@ -1,4 +1,3 @@
-use pyo3::prelude::*;
 use std::io::Write;
 
 mod html;
@@ -25,24 +24,28 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     use crate::synth::vsa::Lit;
     let examples = vec![
         (
-            Lit::StringConst("First Last".to_string()),
-            Lit::StringConst("F L".to_string()),
+            Lit::StringConst("Hello".to_string()),
+            Lit::StringConst("Hello World".to_string()),
         ),
         (
-            Lit::StringConst("Another Name".to_string()),
-            Lit::StringConst("A N".to_string()),
+            Lit::StringConst("Goodbye".to_string()),
+            Lit::StringConst("Goodbye World".to_string()),
         ),
     ];
 
-    let (vsa, ast) = synth::top_down(&examples);
-    let flat_vsa = crate::synth::vsa::VSA::flatten(std::rc::Rc::new(vsa));
-    println!("{}", ast.unwrap());
-    println!("{:?}", flat_vsa);
+    let vsa = crate::synth::VSA::Unlearned { 
+        start: Lit::StringConst("First Last".to_string()),
+        goal: Lit::StringConst("First".to_string()),
+    };
+    // let (vsa, ast) = synth::top_down(&examples);
+    // let flat_vsa = crate::synth::vsa::VSA::flatten(std::rc::Rc::new(vsa));
+    // println!("{}", ast.unwrap());
+    // println!("{:?}", flat_vsa);
 
     let template = VSATemplate {
-        vsa_html: flat_vsa.to_html(&Lit::StringConst("First Last".to_string())),
+        vsa_html: std::rc::Rc::new(vsa).to_html(&Lit::StringConst("Hello".to_string())),
     };
-    let file = std::fs::File::create("docs/bad_vsa.html")?;
+    let file = std::fs::File::create("docs/vsa.html")?;
     let mut writer = std::io::BufWriter::new(file);
     writer.write_all(template.render().unwrap().as_bytes())?;
 

@@ -1,5 +1,9 @@
 # todo
 
+-1. WASM
+- Instead of binary, make it a lib
+- ??? idk
+
 0. VSA HTML
 - [X] Flatten
 - [X] Remove empty

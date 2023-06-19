@@ -1,10 +1,9 @@
 use crate::synth::vsa::*;
-
 use std::rc::Rc;
 
 pub trait ToHtml<L, F>
 where
-    L: Clone + Eq + std::hash::Hash + std::fmt::Debug + InputLit + pyo3::ToPyObject,
+    L: Clone + Eq + std::hash::Hash + std::fmt::Debug + InputLit,
     F: Language<L> + std::hash::Hash + std::fmt::Debug + Copy + std::cmp::Eq,
     AST<L, F>: std::fmt::Display,
 {
@@ -13,7 +12,7 @@ where
 
 impl<L, F> ToHtml<L, F> for Rc<VSA<L, F>>
 where
-    L: Clone + Eq + std::hash::Hash + std::fmt::Debug + InputLit + pyo3::ToPyObject,
+    L: Clone + Eq + std::hash::Hash + std::fmt::Debug + InputLit,
     F: Language<L> + std::hash::Hash + std::fmt::Debug + Copy + std::cmp::Eq,
     AST<L, F>: std::fmt::Display,
 {
@@ -87,10 +86,12 @@ where
                     child_html
                 )
             }
-            VSA::Unlearned { goal } => {
+            VSA::Unlearned { start, goal } => {
                 let mut s = String::new();
-                s.push_str("<div class=\"unlearned box\">");
-                s.push_str(&format!("{:?}", goal));
+                s.push_str(&format!("<div class=\"unlearned box\" id='{}'>", to_ptr(self.clone()) as usize));
+                s.push_str("<div class='unlearned-label'> Unlearned </div>");
+                s.push_str(&format!("{:?} → {:?}", start, goal));
+                s.push_str("<br/><button class='unlearned-btn' @click='learn'> Learn </button>");
                 s.push_str("</div>");
                 s
             }

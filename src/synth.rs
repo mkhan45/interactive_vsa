@@ -17,8 +17,8 @@ use vsa::{Cost, Fun, Lit};
 
 use lazy_static::lazy_static;
 
-type VSA = vsa::VSA<Lit, Fun>;
-type AST = vsa::AST<Lit, Fun>;
+pub type VSA = vsa::VSA<Lit, Fun>;
+pub type AST = vsa::AST<Lit, Fun>;
 
 macro_rules! loc_pat {
     () => {

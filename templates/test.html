@@ -1,6 +1,8 @@
 <html>
     <head>
         <title> VSA </title>
+        <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+        <script src="./pkg/interactive_vsa.js"></script>
     </head>
     <body>
         <div class="svg-container"><svg></svg></div>
@@ -15,6 +17,11 @@ body {
     user-select: none;
     transform: scale(1);
 }
+
+.unlearned-label {
+    font-weight: bold;
+}
+
 .svg-container {
     position: absolute;
     width: 100%;
@@ -228,5 +235,12 @@ body {
         }
 
         place(root_vsa, window.innerWidth / 2 - root_vsa.offsetWidth / 2, 100);
+
+        function learn(e) {
+            let node = e.target.parentNode;
+            let id = node.getAttribute('id');
+            console.log(node);
+            console.log(id);
+        }
     </script>
 </html>
