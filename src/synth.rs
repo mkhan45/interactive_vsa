@@ -356,7 +356,179 @@ fn learn(inp: &Lit, out: &Lit, cache: &mut HashMap<Lit, Rc<VSA>>, bank: &Bank<AS
     res
 }
 
-fn bottom_up<'a>(
+pub fn learn_to_depth(inp: &Lit, out: &Lit, cache: &mut HashMap<Lit, Rc<VSA>>, bank: &Bank<AST>, depth: usize) -> Rc<VSA> {
+    // dbg!();
+    let mut unifier = Vec::new();
+    if let Some(res) = cache.get(out) {
+        unifier.push(res.as_ref().clone());
+        // return res.clone();
+    }
+
+    if depth == 0 {
+        return Rc::new(VSA::Unlearned { start: inp.clone(), goal: out.clone() });
+    }
+
+    macro_rules! universal_witness {
+        ($p:pat) => {
+            bank.entries
+                .iter()
+                .flat_map(|entry| entry.iter().filter(|ast| matches!(ast, $p)))
+        };
+    }
+
+    macro_rules! multi_match {
+        ($v:expr, $($p:pat $(if $guard:expr)? => $res:expr),*) => {
+            $(
+                match $v {
+                    $p $(if $guard)? => $res,
+                    _ => {},
+                }
+            )*
+        };
+    }
+
+    multi_match!((out, inp),
+    // (Lit::StringConst(s), _) if s.as_str() == " " => {
+    //     unifier.push(VSA::singleton(AST::Lit(Lit::StringConst(" ".to_string()))))
+    // },
+    // (Lit::StringConst(s), _) if s.as_str() == "." => {
+    //     unifier.push(VSA::singleton(AST::Lit(Lit::StringConst(".".to_string()))))
+    // },
+    //
+    // TODO:
+    // this makes it impossible to learn in one shot
+    (Lit::StringConst(s), _) => {
+        unifier.push(VSA::singleton(AST::Lit(Lit::StringConst(s.clone()))))
+    },
+
+    (Lit::BoolConst(b), _) => {
+        unifier.push(VSA::singleton(AST::Lit(Lit::BoolConst(*b))))
+    },
+
+    (Lit::LocConst(n), _) => {
+        unifier.push(VSA::singleton(AST::Lit(Lit::LocConst(*n))))
+    },
+
+    (Lit::LocConst(n), Lit::StringConst(inp_str)) if inp_str.len() == *n => {
+        unifier.push(VSA::singleton(AST::Lit(Lit::LocEnd)));
+    },
+
+    (Lit::BoolConst(b), _) => {
+        let s = iproduct!(universal_witness!(loc_pat!()), universal_witness!(loc_pat!())).map(|(lhs, rhs)| {
+            AST::App {
+                fun: Fun::Equal,
+                args: vec![lhs.clone(), rhs.clone()],
+            }
+        }).map(Rc::new).collect();
+        unifier.push(VSA::Leaf(s));
+    },
+
+    (Lit::StringConst(s), Lit::StringConst(inp_str)) if s.contains(inp_str) => {
+        let re = regex(inp_str);
+
+        re.find_iter(s)
+            .map(|m| {
+                let start = m.start();
+                let end = m.end();
+                let start_vsa = learn_to_depth(inp, &Lit::StringConst(s[0..start].to_string()), cache, bank, depth - 1);
+                let end_vsa = learn_to_depth(inp, &Lit::StringConst(s[end..].to_string()), cache, bank, depth - 1);
+                // dbg!(start, end, s[0..start].to_string(), s[end..].to_string(), start_vsa.clone(), end_vsa.clone());
+                // TODO: maybe add a simplify function to the AST
+                VSA::Join {
+                    op: Fun::Concat,
+                    children: vec![
+                        start_vsa,
+                        Rc::new(VSA::Join {
+                            op: Fun::Concat,
+                            children: vec![
+                                learn_to_depth(inp, &Lit::Input, cache, bank, depth - 1),
+                                end_vsa,
+                            ],
+                        }),
+                    ],
+                }
+            })
+        .for_each(|vsa| unifier.push(vsa));
+        },
+
+        (Lit::StringConst(s), Lit::StringConst(inp_str)) if inp_str.contains(s) => {
+            let re = regex(s);
+            let start = inp_str.find(s).unwrap();
+            let end = start + s.len();
+            // dbg!(s, start, end);
+            let start_vsa = learn_to_depth(inp, &Lit::LocConst(start), cache, bank, depth - 1);
+            let end_vsa = learn_to_depth(inp, &Lit::LocConst(end), cache, bank, depth - 1);
+            unifier.push(VSA::Join {
+                op: Fun::Slice,
+                children: vec![
+                    start_vsa,
+                    end_vsa,
+                ],
+            });
+        },
+
+        (Lit::StringConst(s), Lit::StringConst(inp_str)) if !inp_str.contains(s) && !s.contains(inp_str) => {
+            let set = (1..s.len())
+                .map(|i| VSA::Join {
+                    op: Fun::Concat,
+                    children: vec![
+                        learn_to_depth(
+                            inp,
+                            &Lit::StringConst(s[0..i].to_string()),
+                            cache,
+                            bank,
+                            depth - 1
+                        ),
+                        learn_to_depth(
+                            inp,
+                            &Lit::StringConst(s[i..].to_string()),
+                            cache,
+                            bank,
+                            depth - 1
+                        ),
+                    ],
+                })
+            .map(Rc::new)
+                .collect();
+
+            unifier.push(VSA::Union(set));
+        }
+
+    // TODO: figure out the index
+    // (Lit::LocConst(n), Lit::StringConst(s)) if s.chars().nth(*n).is_some_and(|ch| ch == ' ') => {
+    //     let lhs = Rc::new(VSA::singleton(AST::Lit(Lit::Input)));
+    //     let space = cache.get(&Lit::StringConst(" ".to_string())).unwrap().clone();
+    //     let wb = cache.get(&Lit::StringConst("\\b".to_string())).unwrap().clone();
+
+    //     unifier.push(VSA::Join {
+    //         op: Fun::Find,
+    //         children: vec![lhs.clone(), space],
+    //     });
+
+    //     if s.chars().nth(n - 1).is_some_and(|ch| ch.is_alphanumeric()) {
+    //         unifier.push(VSA::Join {
+    //             op: Fun::Find,
+    //             children: vec![lhs, wb],
+    //         });
+    //     }
+    // }
+    );
+
+    let res = unifier
+        .into_iter()
+        .map(Rc::new)
+        .fold(Rc::new(VSA::empty()), |acc, x| Rc::new(VSA::unify(acc, x)));
+
+    match res.as_ref() {
+        VSA::Union(s) if s.is_empty() => todo!(), //bottom up?
+        _ => {}
+    }
+
+    // cache.insert(out.clone(), res.clone());
+    res
+}
+
+pub fn bottom_up<'a>(
     inps: impl Iterator<Item = &'a Lit> + Clone,
     size: usize,
     cache: &mut HashMap<Vec<Lit>, Rc<VSA>>,

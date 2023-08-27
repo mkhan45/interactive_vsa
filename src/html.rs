@@ -87,11 +87,12 @@ where
                 )
             }
             VSA::Unlearned { start, goal } => {
+                let id = to_ptr(self.clone()) as usize;
                 let mut s = String::new();
                 s.push_str(&format!("<div class=\"unlearned box\" id='{}'>", to_ptr(self.clone()) as usize));
                 s.push_str("<div class='unlearned-label'> Unlearned </div>");
                 s.push_str(&format!("{:?} → {:?}", start, goal));
-                s.push_str("<br/><button class='unlearned-btn' @click='learn'> Learn </button>");
+                s.push_str(&format!("<br/><button class='unlearned-btn' onclick='learn(this, {})'> Learn </button>", id));
                 s.push_str("</div>");
                 s
             }
