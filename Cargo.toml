@@ -14,6 +14,6 @@ lazy_static = "1.4.0"
 askama = "0.12.0"
 rustpython = { git = "https://github.com/RustPython/RustPython", branch = "main" }
 
-web-sys = { version = "0.3.64", features = ["Window", "Document", "Element"] }
+web-sys = { version = "0.3.64", features = ["Window", "Document", "Element", "console"] }
 
 wasm-bindgen = "0.2.84"

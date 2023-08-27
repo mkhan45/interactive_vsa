@@ -358,6 +358,7 @@ fn learn(inp: &Lit, out: &Lit, cache: &mut HashMap<Lit, Rc<VSA>>, bank: &Bank<AS
 
 pub fn learn_to_depth(inp: &Lit, out: &Lit, cache: &mut HashMap<Lit, Rc<VSA>>, bank: &Bank<AST>, depth: usize) -> Rc<VSA> {
     // dbg!();
+    web_sys::console::log_1(&format!("learn_to_depth({}): {:?} -> {:?}", depth, inp, out).into());
     let mut unifier = Vec::new();
     if let Some(res) = cache.get(out) {
         unifier.push(res.as_ref().clone());

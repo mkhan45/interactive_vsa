@@ -17,13 +17,15 @@ where
     AST<L, F>: std::fmt::Display,
 {
     fn to_html(&self, input: &L) -> String {
+        web_sys::console::log_1(&format!("to_html: {:?}", self).into());
+
         fn to_ptr<T>(t: Rc<T>) -> *const Rc<T> {
             let b = Box::new(t);
             Box::into_raw(b)
         }
 
         match self.as_ref() {
-            _ if self.is_empty() => "".to_string(),
+            _ if self.empty_html() => "".to_string(),
             VSA::Leaf(set) => {
                 let mut s = String::new();
                 s.push_str(
@@ -62,12 +64,12 @@ where
                 )
             }
             VSA::Join { op, children } => {
-                let mut s = String::new();
                 let child_html = children
                     .iter()
                     .map(|c| c.to_html(input))
                     .collect::<Vec<_>>()
                     .join(" ");
+                web_sys::console::log_1(&format!("join child html: {}", child_html).into());
                 format!(
                     "
                 <div class=\"join\">

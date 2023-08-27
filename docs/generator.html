@@ -81,6 +81,7 @@ body {
     <script>
         window.root = document.querySelector('#root');
         window.vsas = () => allChildren(root);
+        let node_widths = new Map();
 
         function allChildren(node) {
             function helper(node, acc) {
@@ -159,50 +160,55 @@ body {
 
             return helper(node.parentNode.parentNode);
         }
-        for (let node of document.querySelectorAll('.box')) {
-            let box = find_parent_box(node);
-            if (box !== null) {
-                let child = node;
-                let line = svg_container.appendChild(document.createElementNS('http://www.w3.org/2000/svg', 'line'));
-                line.setAttribute('x1', box.offsetLeft + box.offsetWidth / 2);
-                line.setAttribute('y1', box.offsetTop + box.offsetHeight);
-                line.setAttribute('x2', child.offsetLeft + child.offsetWidth / 2);
-                line.setAttribute('y2', child.offsetTop);
-                line.setAttribute('stroke', 'black');
 
-                add_edge(box, child, line);
-            } else {
-                // root
-                root_vsa = node;
-                init_node(node);
+        function graphify(root) {
+            console.log(root);
+            for (let node of root.querySelectorAll('.box')) {
+                console.log("here");
+                let box = find_parent_box(node);
+                if (box !== null) {
+                    let child = node;
+                    let line = svg_container.appendChild(document.createElementNS('http://www.w3.org/2000/svg', 'line'));
+                    line.setAttribute('x1', box.offsetLeft + box.offsetWidth / 2);
+                    line.setAttribute('y1', box.offsetTop + box.offsetHeight);
+                    line.setAttribute('x2', child.offsetLeft + child.offsetWidth / 2);
+                    line.setAttribute('y2', child.offsetTop);
+                    line.setAttribute('stroke', 'black');
+
+                    add_edge(box, child, line);
+                } else {
+                    // root
+                    root_vsa = node;
+                    init_node(node);
+                }
+            }
+
+            for (let [node, info] of nodes.entries()) {
+                let from_lines = Array.from(info.from_lines);
+                let to_lines = Array.from(info.to_lines);
+
+                // make node draggable
+                node.onmousedown = (e) => {
+                    let x = e.clientX;
+                    let y = e.clientY;
+                    let move = (e) => {
+                        x = e.clientX;
+                        y = e.clientY;
+                        move_node(node, x - node.offsetWidth / 2, y - node.offsetHeight / 2);
+                    };
+                    let up = (e) => {
+                        document.removeEventListener('mousemove', move);
+                        document.removeEventListener('mouseup', up);
+                    };
+                    document.addEventListener('mousemove', move);
+                    document.addEventListener('mouseup', up);
+                };
             }
         }
 
-        for (let [node, info] of nodes.entries()) {
-            let from_lines = Array.from(info.from_lines);
-            let to_lines = Array.from(info.to_lines);
-
-            // make node draggable
-            node.onmousedown = (e) => {
-                let x = e.clientX;
-                let y = e.clientY;
-                let move = (e) => {
-                    x = e.clientX;
-                    y = e.clientY;
-                    move_node(node, x - node.offsetWidth / 2, y - node.offsetHeight / 2);
-                };
-                let up = (e) => {
-                    document.removeEventListener('mousemove', move);
-                    document.removeEventListener('mouseup', up);
-                };
-                document.addEventListener('mousemove', move);
-                document.addEventListener('mouseup', up);
-            };
-        }
 
         //const branch_height = root_vsa.offsetHeight * 1.5;
         // might need to start from the bottom up
-        let node_widths = new Map();
         function get_node_width(node) {
             let children = nodes.get(node).children;
             let child_widths = [...children].map(c => get_node_width(c));
@@ -236,10 +242,14 @@ body {
         //place(root_vsa, window.innerWidth / 2 - root_vsa.offsetWidth / 2, 100);
 
         function learn(el, arg) {
+            let root = el.parentNode;
             let vsa_html = wasm_bindgen.learn(arg);
             console.log(vsa_html);
-            el.outerHTML = vsa_html;
+            root.innerHTML = vsa_html;
             // TODO: place properly
+
+            graphify(root);
+            //place(root, window.innerWidth / 2 - root.offsetWidth / 2, 100);
         }
     </script>
 </html>

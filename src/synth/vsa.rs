@@ -60,18 +60,19 @@ where
     }
 
     pub fn eval(&self, inp: &L) -> L {
-        self.pick_one().unwrap().eval(inp)
-        // match self {
-        //     VSA::Leaf(c) => c.iter().next().unwrap().clone().eval(inp),
-        //     VSA::Union(c) => c[0].eval(inp),
-        //     VSA::Join { op, children } => {
-        //         let cs = children
-        //             .iter()
-        //             .map(|vsa| vsa.clone().eval(inp))
-        //             .collect::<Vec<_>>();
-        //         op.eval(&cs)
-        //     }
-        // }
+        // self.pick_one().unwrap().eval(inp)
+        match self {
+            VSA::Leaf(c) => c.iter().next().unwrap().clone().eval(inp),
+            VSA::Union(c) => c[0].eval(inp),
+            VSA::Join { op, children } => {
+                let cs = children
+                    .iter()
+                    .map(|vsa| vsa.clone().eval(inp))
+                    .collect::<Vec<_>>();
+                op.eval(&cs, inp)
+            }
+            VSA::Unlearned { goal, .. } => goal.clone(),
+        }
     }
 
     fn contains(&self, program: &AST<L, F>) -> bool {
@@ -241,6 +242,15 @@ where
         match self {
             VSA::Unlearned { .. } => false,
             _ => self.pick_one().is_none(),
+        }
+    }
+
+    pub fn empty_html(&self) -> bool {
+        match self {
+            VSA::Unlearned { .. } => false,
+            VSA::Leaf(s) => s.len() == 0,
+            VSA::Union(s) => s.iter().all(|vsa| vsa.empty_html()),
+            VSA::Join { children, .. } => children.iter().any(|vsa| vsa.empty_html()),
         }
     }
 

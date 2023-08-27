@@ -39,7 +39,9 @@ pub fn learn(id: usize) -> String {
     let mut regex_bank = synth::bank::Bank::new();
     synth::bottom_up(std::iter::once(&start), 5, &mut all_cache, &mut bank, &mut regex_bank, false);
     let mut cache = all_cache.iter().map(|(results, ast)| (results[0].clone(), ast.clone())).collect();
-    let new_vsa = synth::learn_to_depth(&start, &goal, &mut cache, &bank, 2);
+    let new_vsa = synth::learn_to_depth(&start, &goal, &mut cache, &bank, 1);
+
+    web_sys::console::log_1(&format!("vsa: {:?}", new_vsa).into());
 
     new_vsa.to_html(&start)
 }
@@ -70,7 +72,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let document = window.document().unwrap();
     let vsa = crate::synth::VSA::Unlearned { 
         start: Lit::StringConst("First Last".to_string()),
-        goal: Lit::StringConst("First".to_string()),
+        goal: Lit::StringConst("FL".to_string()),
     };
     // let (vsa, ast) = synth::top_down(&examples);
     // let flat_vsa = crate::synth::vsa::VSA::flatten(std::rc::Rc::new(vsa));
