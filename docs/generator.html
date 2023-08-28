@@ -207,7 +207,6 @@ body {
         }
 
 
-        //const branch_height = root_vsa.offsetHeight * 1.5;
         // might need to start from the bottom up
         function get_node_width(node) {
             let children = nodes.get(node).children;
@@ -230,6 +229,7 @@ body {
             let child_widths = [...children].map(c => node_widths.get(c));
             let total_branch_width = child_widths.reduce((x, y) => x + y, 0);
             let child_x = center_x - total_branch_width / 2;
+            let branch_height = node.offsetHeight * 1.5;
             let child_y = y + branch_height;
             console.log(children, total_branch_width, x, y, child_x, child_y);
             for (let child of children) {
@@ -256,7 +256,7 @@ body {
             // TODO: place properly
 
             graphify(vsa_node);
-            //place(vsa_node, root_pos_x, root_pos_y);
+            place(vsa_node.querySelector(".box"), root_pos_x, root_pos_y);
         }
     </script>
 </html>
