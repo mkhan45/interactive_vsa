@@ -110,8 +110,8 @@ function graphify(root) {
             let x = e.clientX;
             let y = e.clientY;
             let move = (e) => {
-                x = e.clientX;
-                y = e.clientY;
+                x = e.clientX - parseInt(document.body.style.left);
+                y = e.clientY - parseInt(document.body.style.top);
                 move_node(node, x - node.offsetWidth / 2, y - node.offsetHeight / 2);
             };
             let up = (e) => {
@@ -200,5 +200,9 @@ document.body.onkeydown = (e) => {
         document.body.style.left = parseInt(document.body.style.left) + 10 + 'px';
     } else if (e.key === 'ArrowRight') {
         document.body.style.left = parseInt(document.body.style.left) - 10 + 'px';
+    } else if (e.key === 'ArrowUp') {
+        document.body.style.top = parseInt(document.body.style.top) + 10 + 'px';
+    } else if (e.key === 'ArrowDown') {
+        document.body.style.top = parseInt(document.body.style.top) - 10 + 'px';
     }
 }
