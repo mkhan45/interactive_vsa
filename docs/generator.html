@@ -134,6 +134,7 @@ body {
         let move_node = (node, x, y) => {
             node.style.left = x + 'px';
             node.style.top = y + 'px';
+            console.log(node);
             let node_info = nodes.get(node);
             let from_lines = node_info.from_lines;
             let to_lines = node_info.to_lines;
@@ -164,7 +165,6 @@ body {
         function graphify(root) {
             console.log(root);
             for (let node of root.querySelectorAll('.box')) {
-                console.log("here");
                 let box = find_parent_box(node);
                 if (box !== null) {
                     let child = node;
@@ -243,13 +243,20 @@ body {
 
         function learn(el, arg) {
             let root = el.parentNode;
+            let root_pos_x = root.offsetLeft;
+            let root_pos_y = root.offsetTop;
             let vsa_html = wasm_bindgen.learn(arg);
-            console.log(vsa_html);
-            root.innerHTML = vsa_html;
+
+            let wrapper_node = document.createElement('div');
+            wrapper_node.innerHTML = vsa_html;
+            let vsa_node = wrapper_node.children[0];
+            //console.log(vsa_node);
+            //root.replaceChild(vsa_node, el);
+            root.parentNode.replaceChild(vsa_node, root);
             // TODO: place properly
 
-            graphify(root);
-            //place(root, window.innerWidth / 2 - root.offsetWidth / 2, 100);
+            graphify(vsa_node);
+            //place(vsa_node, root_pos_x, root_pos_y);
         }
     </script>
 </html>
