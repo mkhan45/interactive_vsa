@@ -194,3 +194,11 @@ window.onload = () => {
         place(initial, mid_x, 100);
     })
 }
+
+document.body.onkeydown = (e) => {
+    if (e.key === 'ArrowLeft') {
+        document.body.style.left = parseInt(document.body.style.left) + 10 + 'px';
+    } else if (e.key === 'ArrowRight') {
+        document.body.style.left = parseInt(document.body.style.left) - 10 + 'px';
+    }
+}
