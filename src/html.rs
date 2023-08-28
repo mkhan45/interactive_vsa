@@ -30,14 +30,16 @@ where
                 let mut s = String::new();
                 s.push_str(
                     format!(
-                        "<div class=\"leaf box\" id='{}'>",
+                        "<div class=\"leaf\" id='{}'>",
                         to_ptr(self.clone()) as usize
                     )
                     .as_str(),
                 );
+                s.push_str("<div class='box'>");
                 for l in set {
                     s.push_str(&format!("<span class=\"lit\">{}</span>", l.clone()));
                 }
+                s.push_str("</div>");
                 s.push_str("</div>");
                 s
             }
