@@ -15,13 +15,6 @@ function allChildren(node) {
     return acc;
 }
 
-/*
-vsas().forEach(node => {
-    node.onclick = () => {
-        console.log(node);
-    }
-});
-*/
 
 let svg_container = document.querySelector('svg');
 let nodes = new Map();
@@ -184,6 +177,18 @@ function learn(el, arg) {
 
     graphify(vsa_node);
     place(vsa_node.querySelector(".box"), root_pos_x, root_pos_y);
+    
+    document.body.style.transform =
+      "translateX(" +
+      -(
+        -15 +
+        Math.min(
+          ...[...document.body.querySelectorAll("*")].map(
+            (x) => x.getBoundingClientRect().x
+          )
+        )
+      ) +
+      "px)";
 }
 
 window.onload = () => {
@@ -204,5 +209,40 @@ document.body.onkeydown = (e) => {
         document.body.style.top = parseInt(document.body.style.top) + 10 + 'px';
     } else if (e.key === 'ArrowDown') {
         document.body.style.top = parseInt(document.body.style.top) - 10 + 'px';
+    }
+}
+
+window.mode = 'base';
+
+function set_mode_base() {
+    window.mode = 'base';
+    document.querySelector('#select-status').innerHTML = 'Off';
+
+    document.querySelectorAll('.box').forEach(el => el.onclick = e => {})
+}
+
+function toggle_select() {
+    window.mode = window.mode === 'select' ? 'base' : 'select';
+
+    let status_text = window.mode === 'select' ? 'On' : 'Off';
+    document.querySelector('#select-status').innerHTML = status_text;
+
+    if (window.mode === 'select') {
+        document.querySelectorAll('.box').forEach(el => el.onclick = e => {
+            let parent = nodes.get(el).parents.values().next().value;
+            if (!parent.parentNode.classList.contains('union')) {
+                return;
+            }
+
+            let siblings = [...nodes.get(parent).children].filter(c => c !== el);
+            for (let sibling of siblings) {
+                let sibling_dom = sibling.parentNode;
+                sibling_dom.parentNode.removeChild(sibling_dom);
+                let lines = [...nodes.get(parent).from_lines].filter(l => nodes.get(sibling).to_lines.has(l));
+                for (let line of lines) svg_container.removeChild(line);
+            }
+
+            set_mode_base();
+        })
     }
 }
