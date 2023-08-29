@@ -1,9 +1,5 @@
 # todo
 
--1. WASM
-- Instead of binary, make it a lib
-- ??? idk
-
 0. VSA HTML
 - [X] Flatten
 - [X] Remove empty
@@ -15,6 +11,11 @@
     - idk how to do ui/ux for this
     - maybe different connection points instead of all at the center
 - [ ] Draw the lines more nicely
+
+TODO
+- [ ] Reify button
+- [ ] Collapse button
+- [ ] Add JS node (join or leaf, depending on if there are subgoals)
 
 Current process:
     1. compile VSA to HTML, preserving the tree structure

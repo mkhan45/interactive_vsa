@@ -45,9 +45,8 @@ let add_edge = (parent, child, line) => {
     nodes.get(parent).from_lines.add(line);
     nodes.get(child).to_lines.add(line);
 };
-let move_node = (node, x, y) => {
-    node.style.left = x + 'px';
-    node.style.top = y + 'px';
+
+let update_lines = node => {
     let node_info = nodes.get(node);
     let from_lines = node_info.from_lines;
     let to_lines = node_info.to_lines;
@@ -59,6 +58,12 @@ let move_node = (node, x, y) => {
         line.setAttribute('x2', node.offsetLeft + node.offsetWidth / 2);
         line.setAttribute('y2', node.offsetTop);
     }
+}
+
+let move_node = (node, x, y) => {
+    node.style.left = x + 'px';
+    node.style.top = y + 'px';
+    update_lines(node);
 };
 let root_vsa = null;
 function find_parent_box(node) {
@@ -258,6 +263,8 @@ function removeNode(node) {
 function select_from_union(el) {
     let select_btn = el.querySelector('#select');
     el.removeChild(select_btn);
+
+    update_lines(el);
 
     let parent = nodes.get(el).parents.values().next().value;
     if (!parent.parentNode.classList.contains('union')) {
