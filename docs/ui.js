@@ -2,6 +2,8 @@ window.root = document.querySelector('#root');
 window.vsas = () => allChildren(root);
 let node_widths = new Map();
 
+const scene_node = document.querySelector('.scene');
+
 function allChildren(node) {
     function helper(node, acc) {
         for (let child of node.children) {
@@ -74,7 +76,6 @@ function find_parent_box(node) {
 }
 
 function graphify(root) {
-    console.log(root);
     for (let node of root.querySelectorAll('.box')) {
         let box = find_parent_box(node);
         if (box !== null) {
@@ -87,6 +88,14 @@ function graphify(root) {
             line.setAttribute('stroke', 'black');
 
             add_edge(box, child, line);
+
+            if (box.parentNode.classList.contains('union')) {
+                let btn = document.createElement('button');
+                btn.innerText = 'Select';
+                btn.onclick = () => select_from_union(child);
+                btn.id = 'select';
+                node.appendChild(btn);
+            }
         } else {
             // root
             root_vsa = node;
@@ -100,11 +109,11 @@ function graphify(root) {
 
         // make node draggable
         node.onmousedown = (e) => {
-            let x = e.clientX;
-            let y = e.clientY;
+            let x = e.clientX - parseInt(scene_node.style.left) + window.scrollX;
+            let y = e.clientY - parseInt(scene_node.style.top) + window.scrollY;
             let move = (e) => {
-                x = e.clientX - parseInt(document.body.style.left);
-                y = e.clientY - parseInt(document.body.style.top);
+                x = e.clientX - parseInt(scene_node.style.left) + window.scrollX;
+                y = e.clientY - parseInt(scene_node.style.top) + window.scrollY;
                 move_node(node, x - node.offsetWidth / 2, y - node.offsetHeight / 2);
             };
             let up = (e) => {
@@ -144,7 +153,7 @@ function place(node, x, y) {
     let child_x = center_x - total_branch_width / 2;
     let branch_height = node.offsetHeight * 1.5;
     let child_y = y + branch_height;
-    console.log(children, total_branch_width, x, y, child_x, child_y);
+    //console.log(children, total_branch_width, x, y, child_x, child_y);
     for (let child of children) {
         let branch_width = node_widths.get(child);
         place(child, child_x, child_y);
@@ -177,8 +186,12 @@ function learn(el, arg) {
 
     graphify(vsa_node);
     place(vsa_node.querySelector(".box"), root_pos_x, root_pos_y);
-    
-    document.body.style.transform =
+ 
+    let min_x_dist = -15 + Math.min(...[...document.body.querySelectorAll("*")].map(x => x.getBoundingClientRect().x));
+    let max_x_dist = 15 + Math.max(...[...document.body.querySelectorAll("*")].map(x => x.getBoundingClientRect().x));
+
+    /*
+    scene_node.style.transform =
       "translateX(" +
       -(
         -15 +
@@ -188,7 +201,8 @@ function learn(el, arg) {
           )
         )
       ) +
-      "px)";
+      "px)"; 
+    */
 }
 
 window.onload = () => {
@@ -202,13 +216,13 @@ window.onload = () => {
 
 document.body.onkeydown = (e) => {
     if (e.key === 'ArrowLeft') {
-        document.body.style.left = parseInt(document.body.style.left) + 10 + 'px';
+        scene_node.style.left = parseInt(scene_node.style.left) + 10 + 'px';
     } else if (e.key === 'ArrowRight') {
-        document.body.style.left = parseInt(document.body.style.left) - 10 + 'px';
+        scene_node.style.left = parseInt(scene_node.style.left) - 10 + 'px';
     } else if (e.key === 'ArrowUp') {
-        document.body.style.top = parseInt(document.body.style.top) + 10 + 'px';
+        scene_node.style.top = parseInt(scene_node.style.top) + 10 + 'px';
     } else if (e.key === 'ArrowDown') {
-        document.body.style.top = parseInt(document.body.style.top) - 10 + 'px';
+        scene_node.style.top = parseInt(scene_node.style.top) - 10 + 'px';
     }
 }
 
@@ -221,28 +235,37 @@ function set_mode_base() {
     document.querySelectorAll('.box').forEach(el => el.onclick = e => {})
 }
 
-function toggle_select() {
-    window.mode = window.mode === 'select' ? 'base' : 'select';
+function removeNode(node) {
+    node.parentNode.removeChild(node);
 
-    let status_text = window.mode === 'select' ? 'On' : 'Off';
-    document.querySelector('#select-status').innerHTML = status_text;
+    for (let child of nodes.get(node).children) {
+        removeNode(child);
+    }
 
-    if (window.mode === 'select') {
-        document.querySelectorAll('.box').forEach(el => el.onclick = e => {
-            let parent = nodes.get(el).parents.values().next().value;
-            if (!parent.parentNode.classList.contains('union')) {
-                return;
-            }
+    let parent = nodes.get(node).parents.values().next().value;
+    let parent_info = nodes.get(parent);
+    nodes.get(parent).from_lines = [...parent_info.from_lines].filter(l => !nodes.get(node).to_lines.has(l));
 
-            let siblings = [...nodes.get(parent).children].filter(c => c !== el);
-            for (let sibling of siblings) {
-                let sibling_dom = sibling.parentNode;
-                sibling_dom.parentNode.removeChild(sibling_dom);
-                let lines = [...nodes.get(parent).from_lines].filter(l => nodes.get(sibling).to_lines.has(l));
-                for (let line of lines) svg_container.removeChild(line);
-            }
+    let from_lines = nodes.get(node).from_lines;
+    let to_lines = nodes.get(node).to_lines;
+    for (let line of [...from_lines, ...to_lines]) {
+        svg_container.removeChild(line);
+    }
 
-            set_mode_base();
-        })
+    nodes.delete(node);
+}
+
+function select_from_union(el) {
+    let select_btn = el.querySelector('#select');
+    el.removeChild(select_btn);
+
+    let parent = nodes.get(el).parents.values().next().value;
+    if (!parent.parentNode.classList.contains('union')) {
+        return;
+    }
+
+    let siblings = [...nodes.get(parent).children].filter(c => c !== el);
+    for (let sibling of siblings) {
+        removeNode(sibling);
     }
 }

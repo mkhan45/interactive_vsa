@@ -72,7 +72,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let document = window.document().unwrap();
     let vsa = crate::synth::VSA::Unlearned { 
         start: Lit::StringConst("First Last".to_string()),
-        goal: Lit::StringConst("FL".to_string()),
+        goal: Lit::StringConst("F.L.".to_string()),
     };
     // let (vsa, ast) = synth::top_down(&examples);
     // let flat_vsa = crate::synth::vsa::VSA::flatten(std::rc::Rc::new(vsa));
