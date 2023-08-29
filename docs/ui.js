@@ -221,13 +221,13 @@ window.onload = () => {
 
 document.body.onkeydown = (e) => {
     if (e.key === 'ArrowLeft') {
-        scene_node.style.left = parseInt(scene_node.style.left) + 10 + 'px';
+        scene_node.style.left = parseInt(scene_node.style.left) + 50 + 'px';
     } else if (e.key === 'ArrowRight') {
-        scene_node.style.left = parseInt(scene_node.style.left) - 10 + 'px';
+        scene_node.style.left = parseInt(scene_node.style.left) - 50 + 'px';
     } else if (e.key === 'ArrowUp') {
-        scene_node.style.top = parseInt(scene_node.style.top) + 10 + 'px';
+        scene_node.style.top = parseInt(scene_node.style.top) + 50 + 'px';
     } else if (e.key === 'ArrowDown') {
-        scene_node.style.top = parseInt(scene_node.style.top) - 10 + 'px';
+        scene_node.style.top = parseInt(scene_node.style.top) - 50 + 'px';
     }
 }
 

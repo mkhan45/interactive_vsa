@@ -696,6 +696,8 @@ pub fn bottom_up<'a>(
         let outs = inps.clone().map(|inp| adj.eval(inp)).collect::<Vec<_>>();
         use std::collections::hash_map::Entry;
 
+        // TODO: make it add alternatives to a union VSA
+
         // dbg!(adj.size(), size);
         // dbg!(adj.size(), size, bank.len());
         if let Entry::Vacant(e) = cache.entry(outs) {

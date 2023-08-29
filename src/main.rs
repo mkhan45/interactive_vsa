@@ -37,7 +37,7 @@ pub fn learn(id: usize) -> String {
     let mut bank = synth::bank::Bank::new();
     let mut all_cache = std::collections::HashMap::new();
     let mut regex_bank = synth::bank::Bank::new();
-    synth::bottom_up(std::iter::once(&start), 5, &mut all_cache, &mut bank, &mut regex_bank, false);
+    synth::bottom_up(std::iter::once(&start), 6, &mut all_cache, &mut bank, &mut regex_bank, false);
     let mut cache = all_cache.iter().map(|(results, ast)| (results[0].clone(), ast.clone())).collect();
     let new_vsa = synth::learn_to_depth(&start, &goal, &mut cache, &bank, 1);
 
