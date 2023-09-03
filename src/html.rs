@@ -12,7 +12,7 @@ where
 
 impl<L, F> ToHtml<L, F> for Rc<VSA<L, F>>
 where
-    L: Clone + Eq + std::hash::Hash + std::fmt::Debug + InputLit,
+    L: Clone + Eq + std::hash::Hash + std::fmt::Debug + InputLit + std::fmt::Display,
     F: Language<L> + std::hash::Hash + std::fmt::Debug + Copy + std::cmp::Eq,
     AST<L, F>: std::fmt::Display,
 {
@@ -71,12 +71,15 @@ where
                     .map(|c| c.to_html(input))
                     .collect::<Vec<_>>()
                     .join(" ");
+                let children_arg_list = 
+                    children.iter().map(|c| format!("{}", c.eval(input))).collect::<Vec<_>>().join(", ");
+
                 web_sys::console::log_1(&format!("join child html: {}", child_html).into());
                 format!(
                     "
                 <div class=\"join\">
                     <div class=\"box\">
-                        <span class=\"op\">{:?}</span>
+                        <span class=\"op\">{:?}({})</span>
                         <div class=\"join-label\">{:?} → {:?}</div>
                     </div>
                     <div class=\"join-children\">
@@ -85,6 +88,7 @@ where
                 </div>
                 ",
                     op,
+                    children_arg_list,
                     input,
                     self.eval(input),
                     child_html

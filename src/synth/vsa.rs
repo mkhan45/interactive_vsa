@@ -345,6 +345,19 @@ pub enum Lit {
     Input,
 }
 
+impl std::fmt::Display for Lit {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        use Lit::*;
+        match self {
+            StringConst(s) => write!(fmt, "\"{}\"", s),
+            LocConst(l) => write!(fmt, "{}", l),
+            BoolConst(b) => write!(fmt, "{}", b),
+            LocEnd => write!(fmt, "$"),
+            Input => write!(fmt, "X"),
+        }
+    }
+}
+
 impl InputLit for Lit {
     fn is_input(&self) -> bool {
         self == &Lit::Input
