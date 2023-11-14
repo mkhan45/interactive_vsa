@@ -9,9 +9,10 @@ declare namespace wasm_bindgen {
 	export function add(a: number, b: number): number;
 	/**
 	* @param {number} id
+	* @param {number} depth
 	* @returns {string}
 	*/
-	export function learn(id: number): string;
+	export function learn(id: number, depth: number): string;
 	
 }
 
@@ -20,7 +21,7 @@ declare type InitInput = RequestInfo | URL | Response | BufferSource | WebAssemb
 declare interface InitOutput {
   readonly memory: WebAssembly.Memory;
   readonly add: (a: number, b: number) => number;
-  readonly learn: (a: number, b: number) => void;
+  readonly learn: (a: number, b: number, c: number) => void;
   readonly main: (a: number, b: number) => number;
   readonly __wbindgen_add_to_stack_pointer: (a: number) => number;
   readonly __wbindgen_free: (a: number, b: number, c: number) => void;

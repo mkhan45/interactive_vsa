@@ -23,7 +23,7 @@ pub fn add(a: i32, b: i32) -> i32 {
 }
 
 #[wasm_bindgen]
-pub fn learn(id: usize) -> String {
+pub fn learn(id: usize, depth: usize) -> String {
     let (start, goal) = unsafe { 
         let node = *Box::from_raw(id as *mut Rc<synth::VSA>);
         match node.as_ref() {
@@ -39,7 +39,7 @@ pub fn learn(id: usize) -> String {
     let mut regex_bank = synth::bank::Bank::new();
     synth::bottom_up(std::iter::once(&start), 6, &mut all_cache, &mut bank, &mut regex_bank, false);
     let mut cache = all_cache.iter().map(|(results, ast)| (results[0].clone(), ast.clone())).collect();
-    let new_vsa = synth::learn_to_depth(&start, &goal, &mut cache, &bank, 1);
+    let new_vsa = synth::learn_to_depth(&start, &goal, &mut cache, &bank, depth);
 
     web_sys::console::log_1(&format!("vsa: {:?}", new_vsa).into());
 

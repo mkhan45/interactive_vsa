@@ -168,11 +168,13 @@ function place(node, x, y) {
 
 //place(root_vsa, window.innerWidth / 2 - root_vsa.offsetWidth / 2, 100);
 
+window.learn_depth = 1;
+
 function learn(el, arg) {
     let root = el.parentNode;
     let root_pos_x = root.offsetLeft;
     let root_pos_y = root.offsetTop;
-    let vsa_html = wasm_bindgen.learn(arg);
+    let vsa_html = wasm_bindgen.learn(arg, learn_depth);
 
     let wrapper_node = document.createElement('div');
     wrapper_node.innerHTML = vsa_html;

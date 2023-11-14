@@ -73,14 +73,15 @@ function getInt32Memory0() {
 }
 /**
 * @param {number} id
+* @param {number} depth
 * @returns {string}
 */
-__exports.learn = function(id) {
+__exports.learn = function(id, depth) {
     let deferred1_0;
     let deferred1_1;
     try {
         const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-        wasm.learn(retptr, id);
+        wasm.learn(retptr, id, depth);
         var r0 = getInt32Memory0()[retptr / 4 + 0];
         var r1 = getInt32Memory0()[retptr / 4 + 1];
         deferred1_0 = r0;
