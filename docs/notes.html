@@ -9,43 +9,14 @@
 
         <p>
         This repo started out as an interactive VSA synthesizer to explain the Duet
-        algorithm. Since then, I've got a lot of ideas about using VSAs (eventually e-graphs)
-        as a basis for an editor. This page is for notes and to help me explain stuff to people.
+        algorithm. Since then, I've got a lot of ideas about using VSAs (maybe eventually e-graphs)
+        as a basis for an editor. This page is mostly for me to organize my thoughts.
         </p>
 
-        <h2> Structural Editing </h2>
-        <p>
-        Structural editors were inspired by the idea that text is a bad abstraction for programs.
-        There are way more strings than there are valid programs, so a lot of effort in IDEs is
-        spent making sure that you don't type invalid programs. Structural editors instead
-        focus on the structure of the program, which has resulted in some really cool work.
-        </p>
-        <p>
-        ASTs are *the* abstraction for programs. I don't know if there are any alternatives.
-        However, usually programmers are not trying to write a program, instead they are trying
-        to express an algorithm. I would argue that ASTs are not the best abstraction for
-        algorithms for similar reasons that text is not the best abstraction for programs.
-        For a given algorithm, there are many possible valid programs. Usually, for a given
-        piece of code, we don't care about the structure of the program, we care about the
-        algorithm that it represents.
-        </p>
-        <p>
-        E-graphs and VSAs mostly solve this. Traditional VSAs represent a specific program
-        behavior; that's most of the way to precisely representing a given algorithm, the
-        only loss is runtime. I think it's probably possible to allow VSAs to distinguish
-        runtimes though. This is also a weird direction of thought because we probably don't
-        care about slower ways to write the same behavior.
-        <p>
 
         <h2> VSA Editing </h2>
         <p>
-        Structural editors are conceptually simple since it's easy to "type" an AST. VSA
-        editing is a bit harder to visualize, since VSAs represent a potentially very large set
-        of programs. In fact, it's difficult to even visualize a VSA for simple tasks, since
-        there are so many possible programs.
-        </p>
-        <p>
-        This section will have some speculation on different ideas.
+        Some ideas:
         </p>
         <h3> Sketching </h3>
         <p>
@@ -65,7 +36,9 @@
         We can use the idea of program sketching. For the root of the VSA, a user can write
         some intermediate sketch, and the computer can check if it fits the inverse semantics.
         The user can continually refine the program this way until the subproblems are simple
-        enough to be solved by the computer.
+        enough to be solved by the computer. For example, for a name abbreviator, the user could
+        specify <code>"First Last" → "FL"</code>, but if this is too hard for the computer to
+        find, they could specify <code>"First Last" → solve("F") + solve("L")</code>.
         </p>
         <p>
         I'm planning to implement this idea in the demo with JavaScript integration whenever
@@ -100,7 +73,7 @@
         <p>
         There is a lot of information that the user has that the synthesizer doesn't. For example,
         for string synthesis, the user might know which parts of the string are important. FlashFill++
-        uses heuristics to guess information like this, but it's not always right.
+        uses heuristics to guess information like this, but it requires a lot of work on the DSL.
         </p>
         <p>
         It would be cool if the user could easily provide this information to the synthesizer.
@@ -112,6 +85,45 @@
         <p>
         Heuristics for synthesis are hard. However, they are probably getting better. It might
         be helpful for the editor to suggest possible operations to the user.
+        </p>
+        <h3> Multiparadigm Synthesis </h3>
+        <p>
+        There are many synthesis algorithms. But all of them generate a set of programs. A VSA
+        editor can unify these algorithms by allowing the user to choose what specification to
+        use for a subproblem. I don't know how well most specifications would work together in practice.
+        </p>
+
+        <h2> The Structural Editing Argument </h2>
+        <p>
+        This is an idea that seems coherent but is a bit weird.
+        </p>
+        <p>
+        Structural editors were inspired by the idea that text is a bad abstraction for programs.
+        There are way more strings than there are valid programs, so a lot of effort in IDEs is
+        spent making sure that you don't type invalid programs. Structural editors instead
+        focus on the structure of the program, which has resulted in some really cool work.
+        </p>
+        <p>
+        ASTs are *the* abstraction for programs. I don't know if there are any alternatives.
+        However, usually programmers are not trying to write a program, instead they are trying
+        to express an algorithm. I would argue that ASTs are not the best abstraction for
+        algorithms for similar reasons that text is not the best abstraction for programs.
+        For a given algorithm, there are many possible valid programs. Usually, for a given
+        piece of code, we don't care about the structure of the program, we care about the
+        algorithm that it represents.
+        </p>
+        <p>
+        E-graphs and VSAs mostly solve this. Traditional VSAs represent a specific program
+        behavior; that's most of the way to precisely representing a given algorithm, the
+        only loss is runtime. I think it's probably possible to allow VSAs to distinguish
+        runtimes though. This is also a weird direction of thought because we probably don't
+        care about slower ways to write the same behavior.
+        <p>
+        <p>
+        Structural editors are conceptually simple since it's easy to "type" an AST. VSA
+        editing is a bit harder to visualize, since VSAs represent a potentially very large set
+        of programs. In fact, it's difficult to even visualize a VSA for simple tasks, since
+        there are so many possible programs.
         </p>
     </body>
 </html>
