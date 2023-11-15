@@ -84,6 +84,18 @@
         that maximally distinguishes the programs in the VSA, and ask the user which output
         they expect. This can be repeated until the user is satisfied with the specification.
         </p>
+        <h3> Specifying Sub VSAs </h3>
+        <p>
+        Aside from refining the specification for the whole problem, users should be able
+        to find a sub VSA of some synthesis result and then refine its specification. This
+        would be useful since it reduces the problem size, and it might also be easier to
+        specify.
+        </p>
+        <p>
+        The inverse is also interesting: users could create an underspecified VSA, and then
+        refine its specification by adding it as a child of a larger VSA. Then, the parent
+        VSA's specification can be used to refine the child.
+        </p>
         <h3> Giving the Synthesizer more info </h3>
         <p>
         There is a lot of information that the user has that the synthesizer doesn't. For example,
