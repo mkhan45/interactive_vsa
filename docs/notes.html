@@ -16,6 +16,12 @@
 
         <h2> VSA Editing </h2>
         <p>
+        Instead of an AST as the core working representation, the user would edit one or many
+        VSAs, combining them as needed. The core loop might be starting with an incomplete specification
+        for a complex function, then refining subproblems through a variety of methods until
+        the specification is complete, and there is a nonempty VSA satisfying it.
+        </p>
+        <p>
         Some ideas:
         </p>
         <h3> Sketching </h3>
@@ -39,10 +45,6 @@
         enough to be solved by the computer. For example, for a name abbreviator, the user could
         specify <code>"First Last" → "FL"</code>, but if this is too hard for the computer to
         find, they could specify <code>"First Last" → solve("F") + solve("L")</code>.
-        </p>
-        <p>
-        I'm planning to implement this idea in the demo with JavaScript integration whenever
-        I find time.
         </p>
         <h3> Refining the Specification </h3>
         <p>
