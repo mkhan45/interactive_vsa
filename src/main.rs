@@ -1,4 +1,3 @@
-use pyo3::prelude::*;
 use std::io::Write;
 
 mod html;

@@ -116,7 +116,7 @@ pub fn top_down(examples: &[(Lit, Lit)]) -> (VSA, Option<AST>) {
         regex_bank.size_mut(1).push(AST::Lit(prim.clone()));
     }
 
-    let test_prog = AST::Python {
+    let test_prog = AST::JS {
         code: "X.upper()".to_string(),
         input: Box::new(AST::Lit(Lit::Input)),
         typ: vsa::Typ::Str,
@@ -387,7 +387,7 @@ fn bottom_up<'a>(
             matches!(
                 e,
                 AST::Lit(Input | StringConst(_)) | AST::App { fun: Concat | Slice, .. }
-                | AST::Python { typ: vsa::Typ::Str, .. }
+                | AST::JS { typ: vsa::Typ::Str, .. }
             )
         })
     };

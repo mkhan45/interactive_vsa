@@ -4,7 +4,7 @@ use std::rc::Rc;
 
 pub trait ToHtml<L, F>
 where
-    L: Clone + Eq + std::hash::Hash + std::fmt::Debug + InputLit + pyo3::ToPyObject,
+    L: Clone + Eq + std::hash::Hash + std::fmt::Debug + InputLit,
     F: Language<L> + std::hash::Hash + std::fmt::Debug + Copy + std::cmp::Eq,
     AST<L, F>: std::fmt::Display,
 {
@@ -13,7 +13,7 @@ where
 
 impl<L, F> ToHtml<L, F> for Rc<VSA<L, F>>
 where
-    L: Clone + Eq + std::hash::Hash + std::fmt::Debug + InputLit + pyo3::ToPyObject,
+    L: Clone + Eq + std::hash::Hash + std::fmt::Debug + InputLit,
     F: Language<L> + std::hash::Hash + std::fmt::Debug + Copy + std::cmp::Eq,
     AST<L, F>: std::fmt::Display,
 {

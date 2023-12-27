@@ -8,7 +8,7 @@ pub trait Language<L> {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum VSA<L, F>
 where
-    L: Clone + Eq + std::hash::Hash + std::fmt::Debug + InputLit + pyo3::ToPyObject,
+    L: Clone + Eq + std::hash::Hash + std::fmt::Debug + InputLit,
     F: Language<L> + std::hash::Hash + std::fmt::Debug + Eq,
 {
     Leaf(HashSet<Rc<AST<L, F>>>),
@@ -19,7 +19,7 @@ where
 
 impl<L, F> Default for VSA<L, F>
 where
-    L: std::hash::Hash + Eq + Clone + std::fmt::Debug + InputLit + pyo3::ToPyObject,
+    L: std::hash::Hash + Eq + Clone + std::fmt::Debug + InputLit, 
     F: Language<L> + std::hash::Hash + std::fmt::Debug + Eq,
 {
     fn default() -> Self {
@@ -29,7 +29,7 @@ where
 
 impl<L, F> VSA<L, F>
 where
-    L: Clone + Eq + std::hash::Hash + std::fmt::Debug + InputLit + pyo3::ToPyObject,
+    L: Clone + Eq + std::hash::Hash + std::fmt::Debug + InputLit,
     F: Language<L> + Eq + Copy + std::hash::Hash + std::fmt::Debug,
 {
     pub fn empty() -> Self {
@@ -323,7 +323,6 @@ impl Cost for Fun {
 
 pub trait InputLit {
     fn is_input(&self) -> bool;
-    fn from_python(pyobj: &pyo3::PyAny) -> Self;
 }
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
@@ -339,18 +338,6 @@ impl InputLit for Lit {
     fn is_input(&self) -> bool {
         self == &Lit::Input
     }
-
-    fn from_python(pyobj: &pyo3::PyAny) -> Self {
-        if let Ok(s) = pyobj.extract::<String>() {
-            Lit::StringConst(s)
-        } else if let Ok(l) = pyobj.extract::<usize>() {
-            Lit::LocConst(l)
-        } else if let Ok(b) = pyobj.extract::<bool>() {
-            Lit::BoolConst(b)
-        } else {
-            panic!("Cannot convert {:?} to Lit", pyobj)
-        }
-    }
 }
 
 impl Cost for Lit {
@@ -362,22 +349,10 @@ impl Cost for Lit {
     }
 }
 
-impl pyo3::ToPyObject for Lit {
-    fn to_object(&self, py: pyo3::Python) -> pyo3::PyObject {
-        match self {
-            Lit::StringConst(s) => s.to_object(py),
-            Lit::LocConst(l) => l.to_object(py),
-            Lit::BoolConst(b) => b.to_object(py),
-            Lit::LocEnd => (-1).to_object(py),
-            Lit::Input => unreachable!(),
-        }
-    }
-}
-
 #[derive(Clone, Hash, PartialEq, Eq, Debug)]
 pub enum AST<L, F>
 where
-    L: std::hash::Hash + std::fmt::Debug + InputLit + pyo3::ToPyObject,
+    L: std::hash::Hash + std::fmt::Debug + InputLit,
     F: Language<L> + std::hash::Hash + std::fmt::Debug,
 {
     App {
@@ -385,7 +360,7 @@ where
         args: Vec<AST<L, F>>,
     },
     Lit(L),
-    Python {
+    JS {
         code: String,
         input: Box<AST<L, F>>,
         typ: Typ,
@@ -497,7 +472,7 @@ impl Language<Lit> for Fun {
 
 impl<L, F> AST<L, F>
 where
-    L: Clone + std::hash::Hash + std::fmt::Debug + InputLit + pyo3::ToPyObject,
+    L: Clone + std::hash::Hash + std::fmt::Debug + InputLit,
     F: Language<L> + Copy + std::hash::Hash + std::fmt::Debug,
 {
     pub fn eval(&self, inp: &L) -> L {
@@ -508,15 +483,7 @@ where
                 let evaled = args.iter().map(|ast| ast.eval(inp)).collect::<Vec<_>>();
                 fun.eval(&evaled, inp)
             }
-            AST::Python { code, input, .. } => {
-                let inp = input.eval(inp);
-                pyo3::Python::with_gil(|py| {
-                    let locals = pyo3::types::PyDict::new(py);
-                    locals.set_item("X", inp).unwrap();
-                    let res = py.eval(code, None, Some(locals)).unwrap();
-                    L::from_python(res)
-                })
-            }
+            _ => todo!(),
         }
     }
 
@@ -524,21 +491,21 @@ where
         match self {
             AST::Lit(_) => 1,
             AST::App { args, .. } => 1 + args.iter().map(AST::size).sum::<usize>(),
-            AST::Python { code: _, input, .. } => 1 + input.size(),
+            AST::JS { code: _, input, .. } => 1 + input.size(),
         }
     }
 }
 
 impl<L, F> Cost for AST<L, F>
 where
-    L: Clone + std::hash::Hash + std::fmt::Debug + InputLit + Cost + pyo3::ToPyObject,
+    L: Clone + std::hash::Hash + std::fmt::Debug + InputLit + Cost,
     F: Language<L> + Copy + std::hash::Hash + std::fmt::Debug + Cost,
 {
     fn cost(&self) -> usize {
         match self {
             AST::Lit(l) => l.cost(),
             AST::App { fun, args } => fun.cost() + args.iter().map(AST::size).sum::<usize>(),
-            AST::Python { code: _, input, .. } => 1 + input.cost(),
+            AST::JS { code: _, input, .. } => 1 + input.cost(),
         }
     }
 }
@@ -644,7 +611,7 @@ impl Display for AST<Lit, Fun> {
             AST::Lit(Lit::BoolConst(b)) => write!(f, "{}", b),
             AST::Lit(Lit::LocEnd) => write!(f, "$"),
             AST::Lit(Lit::Input) => write!(f, "X"),
-            AST::Python { code, input, .. } => write!(f, "(lambda X: {})({})", code, input),
+            AST::JS { code, input, .. } => write!(f, "(lambda X: {})({})", code, input),
         }
     }
 }
@@ -653,7 +620,7 @@ pub trait DefaultASTDisplay {}
 
 impl<L, F> Display for AST<L, F>
 where
-    L: Clone + std::hash::Hash + std::fmt::Debug + InputLit + pyo3::ToPyObject,
+    L: Clone + std::hash::Hash + std::fmt::Debug + InputLit,
     F: Language<L> + Copy + std::hash::Hash + std::fmt::Debug + DefaultASTDisplay,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -665,7 +632,7 @@ where
                 write!(f, "({:?} [ {}])", fun, args)
             }
             AST::Lit(l) => write!(f, "{:?}", l),
-            AST::Python { code, input, .. } => write!(f, "(lambda X: {})({})", code, input),
+            AST::JS { code, input, .. } => write!(f, "(lambda X: {})({})", code, input),
         }
     }
 }
