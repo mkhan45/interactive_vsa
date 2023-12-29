@@ -116,17 +116,17 @@ pub fn top_down(examples: &[(Lit, Lit)]) -> (VSA, Option<AST>) {
         regex_bank.size_mut(1).push(AST::Lit(prim.clone()));
     }
 
-    let test_prog = AST::JS {
-        code: "X.upper()".to_string(),
-        input: Box::new(AST::Lit(Lit::Input)),
-        typ: vsa::Typ::Str,
-    };
-    bank.size_mut(1).push(test_prog.clone());
-    let outputs = examples.iter().map(|(inp, _)| test_prog.eval(inp));
-    all_cache.insert(
-        outputs.collect(),
-        Rc::new(VSA::singleton(test_prog.clone())),
-    );
+    // let test_prog = AST::JS {
+    //     code: "X.upper()".to_string(),
+    //     input: Box::new(AST::Lit(Lit::Input)),
+    //     typ: vsa::Typ::Str,
+    // };
+    // bank.size_mut(1).push(test_prog.clone());
+    // let outputs = examples.iter().map(|(inp, _)| test_prog.eval(inp));
+    // all_cache.insert(
+    //     outputs.collect(),
+    //     Rc::new(VSA::singleton(test_prog.clone())),
+    // );
 
     let enable_bools = examples
         .iter()

@@ -1,19 +1,14 @@
 use std::io::Write;
 
-mod html;
+use egui_macroquad::macroquad;
+use macroquad::prelude::*;
+
 mod synth;
+mod draw;
+mod main_state;
 
-use html::ToHtml;
-
-use askama::Template;
-
-#[derive(Template)]
-#[template(path = "test.html")]
-struct VSATemplate {
-    vsa_html: String,
-}
-
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+#[macroquad::main("Cloth")]
+async fn main() -> Result<(), std::io::Error> {
     // let code = include_str!("../combo_parser.py");
     // Python::with_gil(|py| -> PyResult<()> {
     //     let combo_parser = PyModule::from_code(py, code, "combo_parser.py", "combo_parser")?;
@@ -38,12 +33,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("{}", ast.unwrap());
     println!("{:?}", flat_vsa);
 
-    let template = VSATemplate {
-        vsa_html: flat_vsa.to_html(&Lit::StringConst("First Last".to_string())),
-    };
-    let file = std::fs::File::create("vsa.html")?;
-    let mut writer = std::io::BufWriter::new(file);
-    writer.write_all(template.render().unwrap().as_bytes())?;
-
-    Ok(())
+    loop {
+        next_frame().await;
+    }
 }

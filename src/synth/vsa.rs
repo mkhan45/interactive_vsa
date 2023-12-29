@@ -378,8 +378,7 @@ impl Language<Lit> for Fun {
     fn eval(&self, args: &[Lit], input: &Lit) -> Lit {
         match self {
             Fun::Concat => match args {
-                [Lit::StringConst(lhs), Lit::StringConst(rhs)] => {
-                    Lit::StringConst(format!("{}{}", lhs, rhs))
+                [Lit::StringConst(lhs), Lit::StringConst(rhs)] => { Lit::StringConst(format!("{}{}", lhs, rhs))
                 }
                 _ => panic!(),
             },
@@ -483,7 +482,7 @@ where
                 let evaled = args.iter().map(|ast| ast.eval(inp)).collect::<Vec<_>>();
                 fun.eval(&evaled, inp)
             }
-            _ => todo!(),
+            AST::JS { code, input, typ } => todo!(),
         }
     }
 
