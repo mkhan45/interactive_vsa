@@ -14,7 +14,7 @@ where
     Leaf(HashSet<Rc<AST<L, F>>>),
     Union(Vec<Rc<VSA<L, F>>>),
     Join { op: F, children: Vec<Rc<VSA<L, F>>> },
-    Unlearned { goal: L },
+    Unlearned { start: L, goal: L },
 }
 
 impl<L, F> Default for VSA<L, F>
@@ -60,18 +60,19 @@ where
     }
 
     pub fn eval(&self, inp: &L) -> L {
-        self.pick_one().unwrap().eval(inp)
-        // match self {
-        //     VSA::Leaf(c) => c.iter().next().unwrap().clone().eval(inp),
-        //     VSA::Union(c) => c[0].eval(inp),
-        //     VSA::Join { op, children } => {
-        //         let cs = children
-        //             .iter()
-        //             .map(|vsa| vsa.clone().eval(inp))
-        //             .collect::<Vec<_>>();
-        //         op.eval(&cs)
-        //     }
-        // }
+        // self.pick_one().unwrap().eval(inp)
+        match self {
+            VSA::Leaf(c) => c.iter().next().unwrap().clone().eval(inp),
+            VSA::Union(c) => c[0].eval(inp),
+            VSA::Join { op, children } => {
+                let cs = children
+                    .iter()
+                    .map(|vsa| vsa.clone().eval(inp))
+                    .collect::<Vec<_>>();
+                op.eval(&cs, inp)
+            }
+            VSA::Unlearned { goal, .. } => goal.clone(),
+        }
     }
 
     fn contains(&self, program: &AST<L, F>) -> bool {
@@ -231,7 +232,7 @@ where
                     .collect(),
                 )
             }
-            VSA::Unlearned { goal } => {
+            VSA::Unlearned { start, goal } => {
                 todo!()
             }
         }
@@ -241,6 +242,15 @@ where
         match self {
             VSA::Unlearned { .. } => false,
             _ => self.pick_one().is_none(),
+        }
+    }
+
+    pub fn empty_html(&self) -> bool {
+        match self {
+            VSA::Unlearned { .. } => false,
+            VSA::Leaf(s) => s.len() == 0,
+            VSA::Union(s) => s.iter().all(|vsa| vsa.empty_html()),
+            VSA::Join { children, .. } => children.iter().any(|vsa| vsa.empty_html()),
         }
     }
 
@@ -332,6 +342,19 @@ pub enum Lit {
     BoolConst(bool),
     LocEnd,
     Input,
+}
+
+impl std::fmt::Display for Lit {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        use Lit::*;
+        match self {
+            StringConst(s) => write!(fmt, "\"{}\"", s),
+            LocConst(l) => write!(fmt, "{}", l),
+            BoolConst(b) => write!(fmt, "{}", b),
+            LocEnd => write!(fmt, "$"),
+            Input => write!(fmt, "X"),
+        }
+    }
 }
 
 impl InputLit for Lit {

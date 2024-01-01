@@ -42,8 +42,14 @@ where
                 draw_vsa(vsa.clone(), pos + vec2(0.0, y_offs), Some(id), ui);
             }
         }
-        VSA::Join { op, children } => todo!(),
-        VSA::Unlearned { goal } => todo!(),
+        VSA::Join { op, children } => {
+            // TODO: need input to eval children args
+            draw_join_root(id, op.clone(), pos, parent_id, ui);
+            todo!()
+        }
+        VSA::Unlearned { start, goal } => {
+            
+        }
     }
 }
 
@@ -63,6 +69,15 @@ pub fn floating_window(title: &str, id: Id, start_pos: Vec2) -> Window {
 
 pub fn draw_union_root(id: Id, start_pos: Vec2, parent_id: Option<Id>, ui: &Context) {
     floating_window("Union", id, start_pos).show(ui, |ui| ui.label("Union"));
+    draw_arrow_opt(id, parent_id, ui);
+}
+
+pub fn draw_join_root<L, F>(id: Id, op: &F, start_pos: Vec2, parent_id: Option<Id>, ui: &Context) 
+where
+    L: Clone + Eq + std::hash::Hash + std::fmt::Debug + InputLit,
+    F: Language<L> + std::hash::Hash + std::fmt::Debug + Eq,
+{
+    floating_window("Join", id, start_pos).show(ui, |ui| ui.label(format!("{:?}", op)));
     draw_arrow_opt(id, parent_id, ui);
 }
 

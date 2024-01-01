@@ -12,6 +12,11 @@
     - maybe different connection points instead of all at the center
 - [ ] Draw the lines more nicely
 
+TODO
+- [ ] Reify button
+- [ ] Collapse button
+- [ ] Add JS node (join or leaf, depending on if there are subgoals)
+
 Current process:
     1. compile VSA to HTML, preserving the tree structure
     2. Using the tree structure in the HTML, create an edge SVG node for each

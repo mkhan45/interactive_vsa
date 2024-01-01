@@ -12,5 +12,3 @@ lru = "0.9.0"
 lazy_static = "1.4.0"
 
 egui-macroquad = { path = "../egui-macroquad" }
-
-askama = "0.12.0"

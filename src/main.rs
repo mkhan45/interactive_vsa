@@ -1,5 +1,3 @@
-use std::io::Write;
-
 use egui_macroquad::macroquad;
 use macroquad::prelude::*;
 
@@ -9,18 +7,10 @@ mod main_state;
 
 use main_state::VSAState;
 use synth::vsa::{VSA, Lit, Fun, AST};
-
 use std::rc::Rc;
 
 #[macroquad::main("Cloth")]
 async fn main() -> Result<(), std::io::Error> {
-    // let code = include_str!("../combo_parser.py");
-    // Python::with_gil(|py| -> PyResult<()> {
-    //     let combo_parser = PyModule::from_code(py, code, "combo_parser.py", "combo_parser")?;
-    //     dbg!(combo_parser);
-    //     Ok(())
-    // })?;
-
     // use crate::synth::vsa::Lit;
     // let examples = vec![
     //     (
