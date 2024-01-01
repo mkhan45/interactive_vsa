@@ -1,7 +1,7 @@
 use crate::synth::vsa::*;
 
 use egui_macroquad::egui::{self, Ui, Painter, Window, Id, Context};
-use egui_macroquad::macroquad::math::Vec2;
+use egui_macroquad::macroquad::math::{Vec2, vec2};
 
 use std::rc::Rc;
 
@@ -22,13 +22,24 @@ where
     match vsa.as_ref() {
         VSA::Leaf(asts) => {
             for ast in asts {
-                draw_ast(id, ast, pos, parent_id, ui);
+                draw_ast( ast, pos, parent_id, ui);
             }
         }
         VSA::Union(vsas) => {
             draw_union_root(id, pos, parent_id, ui);
-            for vsa in vsas {
-                draw_vsa(vsa.clone(), pos, Some(id), ui);
+            let y_offs = 60.0;
+            if vsas.len() > 1 {
+                let x_offs = {
+                    let single_offs = &20.0; // can't copy f32 otherwise???
+                    let n = vsas.len() as i32;
+                    ((-n/2)..(n/2)).map(|i| (i as f32) * *single_offs)
+                };
+                for (vsa, x) in vsas.iter().zip(x_offs) {
+                    draw_vsa(vsa.clone(), pos + vec2(x, y_offs), Some(id), ui);
+                }
+            } else /* vsas.len() == 1 */ {
+                let vsa = &vsas[0];
+                draw_vsa(vsa.clone(), pos + vec2(0.0, y_offs), Some(id), ui);
             }
         }
         VSA::Join { op, children } => todo!(),
@@ -41,38 +52,29 @@ pub fn vec2pos(v: Vec2) -> egui::Pos2 {
     egui::Pos2::new(v.x, v.y)
 }
 
-pub fn draw_union_root(id: Id, start_pos: Vec2, parent_id: Option<Id>, ui: &Context) {
-    Window::new("AST")
+pub fn floating_window(title: &str, id: Id, start_pos: Vec2) -> Window {
+    Window::new(title)
         .id(id)
         .default_pos(vec2pos(start_pos))
         .title_bar(false)
         .collapsible(false)
         .resizable(false)
-        .show(ui, |ui| {
-            ui.label(format!("Union"));
-        });
+}
 
+pub fn draw_union_root(id: Id, start_pos: Vec2, parent_id: Option<Id>, ui: &Context) {
+    floating_window("Union", id, start_pos).show(ui, |ui| ui.label("Union"));
     draw_arrow_opt(id, parent_id, ui);
 }
 
-pub fn draw_ast<L, F>(id: Id, ast: &AST<L, F>, start_pos: Vec2, parent_id: Option<Id>, ui: &Context)
+pub fn draw_ast<L, F>(ast: &AST<L, F>, start_pos: Vec2, parent_id: Option<Id>, ui: &Context)
 where
     L: Clone + Eq + std::hash::Hash + std::fmt::Debug + InputLit,
     F: Language<L> + std::hash::Hash + std::fmt::Debug + Eq,
 {
-    let id_seed = format!("{:?}{:?}", id, ast);
+    let id_seed = format!("{:?}{:?}", parent_id, ast);
     let ast_id = Id::new(id_seed);
 
-    Window::new("AST")
-        .id(ast_id)
-        .title_bar(false)
-        .collapsible(false)
-        .resizable(false)
-        .default_pos(vec2pos(start_pos))
-        .show(ui, |ui| {
-            ui.label(format!("{:?}", ast));
-        });
-
+    floating_window("AST", ast_id, start_pos).show(ui, |ui| ui.label(format!("{:?}", ast)));
     draw_arrow_opt(ast_id, parent_id, ui);
 }
 
