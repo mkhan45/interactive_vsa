@@ -41,7 +41,7 @@ async fn main() -> Result<(), std::io::Error> {
     let vsa = {
         let mut set = std::collections::HashSet::new();
         set.insert(Rc::new(AST::Lit(Lit::StringConst("First Last".to_string()))));
-        VSA::Leaf(set)
+        VSA::Union(vec!(Rc::new(VSA::Leaf(set))))
     };
     let mut vsas = Vec::new();
     vsas.push(VSAState {

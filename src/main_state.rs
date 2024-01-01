@@ -37,7 +37,7 @@ impl MainState {
         egui_macroquad::ui(|egui_ctx| {
             clear_background(BLACK);
             for vsa in &self.vsas {
-                draw_vsa(&vsa.vsa, Some(vsa.pos), egui_ctx);
+                draw_vsa(vsa.vsa.clone(), Vec2::new(100.0, 100.0), None, egui_ctx);
             }
         });
         egui_macroquad::draw();
