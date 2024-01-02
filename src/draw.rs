@@ -3,6 +3,8 @@ use crate::synth::vsa::*;
 use egui_macroquad::egui::{self, Ui, Painter, Window, Id, Context};
 use egui_macroquad::macroquad::math::{Vec2, vec2};
 
+use crate::main_state::VSAState;
+
 use std::rc::Rc;
 
 const ARROW_ORDER: egui::layers::Order = egui::layers::Order::Middle;
@@ -13,10 +15,72 @@ pub fn rc_to_id<T>(rc: Rc<T>) -> Id {
     Id::new(ptr as usize)
 }
 
-pub fn draw_vsa<L, F>(vsa: Rc<VSA<L, F>>, pos: Vec2, parent_id: Option<Id>, ui: &Context)
+impl VSAState {
+    #[inline(always)]
+    pub fn id(&self) -> Id {
+        rc_to_id(self.vsa.clone())
+    }
+
+    pub fn draw(&self, parent_id: Option<Id>, egui_ctx: &Context) {
+        // TODO:
+        // 1. replace pos with area
+        // 2. replace inp with input
+        let id = self.id();
+        match self.vsa.as_ref() {
+            VSA::Leaf(asts) => {
+                // TODO: put all ASTS in one window
+                // for ast in asts {
+                //     draw_ast(ast, pos, parent_id, ui);
+                // }
+            }
+            VSA::Union(vsas) => {
+                // draw_union_root(id, pos, parent_id, egui_ctx);
+                self.area.show(egui_ctx, |ui| {
+                    ui.label("Union");
+                });
+                let y_offs = 60.0;
+                if vsas.len() > 1 {
+                    let x_offs = {
+                        let single_offs = &250.0; // can't copy f32 otherwise???
+                        let n = vsas.len() as i32;
+                        ((-n/2)..(n/2)).map(|i| (i as f32) * *single_offs)
+                    };
+                    for (vsa, x) in vsas.iter().zip(x_offs) {
+                        draw_vsa(vsa.clone(), pos + vec2(x, y_offs), inp, Some(id), egui_ctx);
+                    }
+                } else if vsas.len() == 1 {
+                    let vsa = &vsas[0];
+                    draw_vsa(vsa.clone(), pos + vec2(0.0, y_offs), inp, Some(id), egui_ctx);
+                }
+            }
+            VSA::Join { op, children, children_goals } => {
+                draw_join_root(id, op, &children_goals, inp, pos, parent_id, egui_ctx);
+                let y_offs = 60.0;
+                if children.len() > 1 {
+                    let x_offs = {
+                        let single_offs = &250.0; // can't copy f32 otherwise???
+                        let n = children.len() as i32;
+                        ((-n/2)..(n/2)).map(|i| (i as f32) * *single_offs)
+                    };
+                    for (vsa, x) in children.iter().zip(x_offs) {
+                        draw_vsa(vsa.clone(), pos + vec2(x, y_offs), inp, Some(id), egui_ctx);
+                    }
+                } else {
+                    let vsa = &children[0];
+                    draw_vsa(vsa.clone(), pos + vec2(0.0, y_offs), inp, Some(id), egui_ctx);
+                }
+            }
+            VSA::Unlearned { start, goal } => {
+                
+            }
+        }
+    }
+}
+
+pub fn draw_vsa<L, F>(vsa: Rc<VSA<L, F>>, pos: Vec2, inp: &L, parent_id: Option<Id>, ui: &Context)
 where
-    L: Clone + Eq + std::hash::Hash + std::fmt::Debug + InputLit,
-    F: Language<L> + std::hash::Hash + std::fmt::Debug + Eq,
+    L: Clone + Eq + std::hash::Hash + std::fmt::Debug + InputLit + std::fmt::Display,
+    F: Language<L> + std::hash::Hash + std::fmt::Debug + Eq + Copy,
 {
     let id = rc_to_id(vsa.clone());
     match vsa.as_ref() {
@@ -30,22 +94,34 @@ where
             let y_offs = 60.0;
             if vsas.len() > 1 {
                 let x_offs = {
-                    let single_offs = &20.0; // can't copy f32 otherwise???
+                    let single_offs = &250.0; // can't copy f32 otherwise???
                     let n = vsas.len() as i32;
                     ((-n/2)..(n/2)).map(|i| (i as f32) * *single_offs)
                 };
                 for (vsa, x) in vsas.iter().zip(x_offs) {
-                    draw_vsa(vsa.clone(), pos + vec2(x, y_offs), Some(id), ui);
+                    draw_vsa(vsa.clone(), pos + vec2(x, y_offs), inp, Some(id), ui);
                 }
-            } else /* vsas.len() == 1 */ {
+            } else if vsas.len() == 1 {
                 let vsa = &vsas[0];
-                draw_vsa(vsa.clone(), pos + vec2(0.0, y_offs), Some(id), ui);
+                draw_vsa(vsa.clone(), pos + vec2(0.0, y_offs), inp, Some(id), ui);
             }
         }
-        VSA::Join { op, children } => {
-            // TODO: need input to eval children args
-            draw_join_root(id, op.clone(), pos, parent_id, ui);
-            todo!()
+        VSA::Join { op, children, children_goals } => {
+            draw_join_root(id, op, &children_goals, inp, pos, parent_id, ui);
+            let y_offs = 60.0;
+            if children.len() > 1 {
+                let x_offs = {
+                    let single_offs = &250.0; // can't copy f32 otherwise???
+                    let n = children.len() as i32;
+                    ((-n/2)..(n/2)).map(|i| (i as f32) * *single_offs)
+                };
+                for (vsa, x) in children.iter().zip(x_offs) {
+                    draw_vsa(vsa.clone(), pos + vec2(x, y_offs), inp, Some(id), ui);
+                }
+            } else {
+                let vsa = &children[0];
+                draw_vsa(vsa.clone(), pos + vec2(0.0, y_offs), inp, Some(id), ui);
+            }
         }
         VSA::Unlearned { start, goal } => {
             
@@ -72,12 +148,19 @@ pub fn draw_union_root(id: Id, start_pos: Vec2, parent_id: Option<Id>, ui: &Cont
     draw_arrow_opt(id, parent_id, ui);
 }
 
-pub fn draw_join_root<L, F>(id: Id, op: &F, start_pos: Vec2, parent_id: Option<Id>, ui: &Context) 
+pub fn draw_join_root<L, F>(
+    id: Id, op: &F, children_goals: &[L], inp: &L, start_pos: Vec2, parent_id: Option<Id>, ui: &Context
+)
 where
-    L: Clone + Eq + std::hash::Hash + std::fmt::Debug + InputLit,
-    F: Language<L> + std::hash::Hash + std::fmt::Debug + Eq,
+    L: Clone + Eq + std::hash::Hash + std::fmt::Debug + InputLit + std::fmt::Display,
+    F: Language<L> + std::hash::Hash + std::fmt::Debug + Eq + std::marker::Copy,
 {
-    floating_window("Join", id, start_pos).show(ui, |ui| ui.label(format!("{:?}", op)));
+    let children_arg_list = children_goals.iter()
+        .map(|v| format!("{}", v))
+        .collect::<Vec<_>>()
+        .join(", ");
+    let name = format!("{:?}({})", op, children_arg_list);
+    floating_window("Join", id, start_pos).show(ui, |ui| ui.label(&name));
     draw_arrow_opt(id, parent_id, ui);
 }
 

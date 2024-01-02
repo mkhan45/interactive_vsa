@@ -13,7 +13,7 @@ where
 {
     Leaf(HashSet<Rc<AST<L, F>>>),
     Union(Vec<Rc<VSA<L, F>>>),
-    Join { op: F, children: Vec<Rc<VSA<L, F>>> },
+    Join { op: F, children: Vec<Rc<VSA<L, F>>>, children_goals: Vec<L> },
     Unlearned { start: L, goal: L },
 }
 
@@ -64,7 +64,7 @@ where
         match self {
             VSA::Leaf(c) => c.iter().next().unwrap().clone().eval(inp),
             VSA::Union(c) => c[0].eval(inp),
-            VSA::Join { op, children } => {
+            VSA::Join { op, children, .. } => {
                 let cs = children
                     .iter()
                     .map(|vsa| vsa.clone().eval(inp))
@@ -79,7 +79,7 @@ where
         match self {
             VSA::Leaf(s) => s.contains(program),
             VSA::Union(vss) => vss.iter().any(|vs| vs.contains(program)),
-            VSA::Join { op, children } => match program {
+            VSA::Join { op, children, .. } => match program {
                 AST::App { fun, args } if fun == op => args
                     .iter()
                     .all(|arg| children.iter().any(|vss| vss.contains(arg))),
@@ -105,14 +105,15 @@ where
                 if l_op != r_op => VSA::empty(),
 
             #[rustfmt::skip]
-            (VSA::Join { op, children: l_children }, VSA::Join { op: _, children: r_children })
+            (VSA::Join { op, children: l_children, children_goals }, VSA::Join { op: _, children: r_children, .. })
                 => VSA::Join {
                     op: *op,
-                    children: l_children.iter().zip(r_children).map(|(l, r)| Rc::new(l.intersect(r))).collect()
+                    children: l_children.iter().zip(r_children).map(|(l, r)| Rc::new(l.intersect(r))).collect(),
+                    children_goals: children_goals.clone()
                 },
 
             #[rustfmt::skip]
-            (VSA::Join { op, children }, VSA::Leaf(s)) | (VSA::Leaf(s), VSA::Join { op, children })
+            (VSA::Join { op, children, .. }, VSA::Leaf(s)) | (VSA::Leaf(s), VSA::Join { op, children, .. })
                 => VSA::Leaf(s.iter().filter(|pj| {
                     match pj.as_ref() {
                         AST::App { fun, args } if fun == op =>
@@ -162,7 +163,7 @@ where
                 .iter()
                 .filter_map(|vsa| vsa.pick_best(rank))
                 .min_by_key(rank),
-            VSA::Join { op, children } => {
+            VSA::Join { op, children, .. } => {
                 let mut args = children.iter().map(|vsa| vsa.pick_best(rank));
                 if args.any(|picked| picked.is_none()) {
                     None
@@ -184,7 +185,7 @@ where
         match self {
             VSA::Leaf(s) => s.iter().next().map(|x| x.as_ref().clone()),
             VSA::Union(s) => s.iter().find_map(|vsa| vsa.pick_one()),
-            VSA::Join { op, children } => {
+            VSA::Join { op, children, .. } => {
                 let mut args = children.iter().map(|vsa| vsa.pick_one());
                 if args.any(|picked| picked.is_none()) {
                     None
@@ -218,7 +219,7 @@ where
                     .reduce(|a, b| a.into_iter().chain(b.into_iter()).collect())
                     .unwrap(),
             ),
-            VSA::Join { op, children } => {
+            VSA::Join { op, children, .. } => {
                 let ns = children.iter().map(|vsa| VSA::cluster(vsa.clone(), input));
                 VSA::group_by(
                     ns.map(|m| {
@@ -286,18 +287,19 @@ where
                                 Some(Rc::new(VSA::Leaf(nasts)))
                             }
                         }
+                        VSA::Union(s) if s.is_empty() => None,
                         _ => Some(vsa.clone()),
                     })
                     .collect();
                 flattened.dedup();
                 Rc::new(VSA::Union(flattened))
             }
-            VSA::Join { op, children } => {
+            VSA::Join { op, children, children_goals } => {
                 let children = children
                     .iter()
                     .map(|vsa| VSA::flatten(vsa.clone()))
                     .collect();
-                Rc::new(VSA::Join { op: *op, children })
+                Rc::new(VSA::Join { op: *op, children, children_goals: children_goals.clone() })
             }
             VSA::Unlearned { .. } => vsa,
         }

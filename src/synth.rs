@@ -260,8 +260,10 @@ fn learn(inp: &Lit, out: &Lit, cache: &mut HashMap<Lit, Rc<VSA>>, bank: &Bank<AS
             .map(|m| {
                 let start = m.start();
                 let end = m.end();
-                let start_vsa = learn(inp, &Lit::StringConst(s[0..start].to_string()), cache, bank);
-                let end_vsa = learn(inp, &Lit::StringConst(s[end..].to_string()), cache, bank);
+                let start_lit = Lit::StringConst(s[0..start].to_string());
+                let end_lit = Lit::StringConst(s[end..].to_string());
+                let start_vsa = learn(inp, &start_lit, cache, bank);
+                let end_vsa = learn(inp, &end_lit, cache, bank);
                 // dbg!(start, end, s[0..start].to_string(), s[end..].to_string(), start_vsa.clone(), end_vsa.clone());
                 // TODO: maybe add a simplify function to the AST
                 VSA::Join {
@@ -274,8 +276,10 @@ fn learn(inp: &Lit, out: &Lit, cache: &mut HashMap<Lit, Rc<VSA>>, bank: &Bank<AS
                                 learn(inp, &Lit::Input, cache, bank),
                                 end_vsa,
                             ],
+                            children_goals: vec![Lit::Input],
                         }),
                     ],
+                    children_goals: vec![start_lit, end_lit],
                 }
             })
         .for_each(|vsa| unifier.push(vsa));
@@ -286,14 +290,17 @@ fn learn(inp: &Lit, out: &Lit, cache: &mut HashMap<Lit, Rc<VSA>>, bank: &Bank<AS
             let start = inp_str.find(s).unwrap();
             let end = start + s.len();
             // dbg!(s, start, end);
-            let start_vsa = learn(inp, &Lit::LocConst(start), cache, bank);
-            let end_vsa = learn(inp, &Lit::LocConst(end), cache, bank);
+            let start_lit = Lit::LocConst(start);
+            let end_lit = Lit::LocConst(end);
+            let start_vsa = learn(inp, &start_lit, cache, bank);
+            let end_vsa = learn(inp, &end_lit, cache, bank);
             unifier.push(VSA::Join {
                 op: Fun::Slice,
                 children: vec![
                     start_vsa,
                     end_vsa,
                 ],
+                children_goals: vec![start_lit, end_lit],
             });
         },
 
@@ -315,8 +322,9 @@ fn learn(inp: &Lit, out: &Lit, cache: &mut HashMap<Lit, Rc<VSA>>, bank: &Bank<AS
                             bank,
                         ),
                     ],
+                    children_goals: vec![Lit::StringConst(s[0..i].to_string()), Lit::StringConst(s[i..].to_string())],
                 })
-            .map(Rc::new)
+                .map(Rc::new)
                 .collect();
 
             unifier.push(VSA::Union(set));
@@ -430,8 +438,10 @@ pub fn learn_to_depth(inp: &Lit, out: &Lit, cache: &mut HashMap<Lit, Rc<VSA>>, b
             .map(|m| {
                 let start = m.start();
                 let end = m.end();
-                let start_vsa = learn_to_depth(inp, &Lit::StringConst(s[0..start].to_string()), cache, bank, depth - 1);
-                let end_vsa = learn_to_depth(inp, &Lit::StringConst(s[end..].to_string()), cache, bank, depth - 1);
+                let start_lit = Lit::StringConst(s[0..start].to_string());
+                let end_lit = Lit::StringConst(s[end..].to_string());
+                let start_vsa = learn_to_depth(inp, &start_lit, cache, bank, depth - 1);
+                let end_vsa = learn_to_depth(inp, &end_lit, cache, bank, depth - 1);
                 // dbg!(start, end, s[0..start].to_string(), s[end..].to_string(), start_vsa.clone(), end_vsa.clone());
                 // TODO: maybe add a simplify function to the AST
                 VSA::Join {
@@ -444,8 +454,10 @@ pub fn learn_to_depth(inp: &Lit, out: &Lit, cache: &mut HashMap<Lit, Rc<VSA>>, b
                                 learn_to_depth(inp, &Lit::Input, cache, bank, depth - 1),
                                 end_vsa,
                             ],
+                            children_goals: vec![Lit::Input],
                         }),
                     ],
+                    children_goals: vec![start_lit, end_lit],
                 }
             })
         .for_each(|vsa| unifier.push(vsa));
@@ -456,14 +468,17 @@ pub fn learn_to_depth(inp: &Lit, out: &Lit, cache: &mut HashMap<Lit, Rc<VSA>>, b
             let start = inp_str.find(s).unwrap();
             let end = start + s.len();
             // dbg!(s, start, end);
-            let start_vsa = learn_to_depth(inp, &Lit::LocConst(start), cache, bank, depth - 1);
-            let end_vsa = learn_to_depth(inp, &Lit::LocConst(end), cache, bank, depth - 1);
+            let start_lit = Lit::LocConst(start);
+            let end_lit = Lit::LocConst(end);
+            let start_vsa = learn_to_depth(inp, &start_lit, cache, bank, depth - 1);
+            let end_vsa = learn_to_depth(inp, &end_lit, cache, bank, depth - 1);
             unifier.push(VSA::Join {
                 op: Fun::Slice,
                 children: vec![
                     start_vsa,
                     end_vsa,
                 ],
+                children_goals: vec![start_lit, end_lit],
             });
         },
 
@@ -487,6 +502,7 @@ pub fn learn_to_depth(inp: &Lit, out: &Lit, cache: &mut HashMap<Lit, Rc<VSA>>, b
                             depth - 1
                         ),
                     ],
+                    children_goals: vec![Lit::StringConst(s[0..i].to_string()), Lit::StringConst(s[i..].to_string())],
                 })
             .map(Rc::new)
                 .collect();
