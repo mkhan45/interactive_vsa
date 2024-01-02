@@ -1,11 +1,13 @@
 use crate::synth::vsa::*;
 use egui_macroquad::macroquad::prelude::*;
-use egui_macroquad::egui;
+use egui_macroquad::egui::{self, Id, Context};
+
+use crate::util::rc_to_id;
 
 use std::rc::Rc;
 
 pub struct RichVSA {
-    pub vsa: VSA<Lit, Fun>,
+    pub vsa: Rc<VSA<Lit, Fun>>,
     pub input: Lit,
     pub goal: Lit,
     pub area: egui::Area,
@@ -30,12 +32,44 @@ impl RichVSA {
             }
         };
 
+        let area = todo!();
+
         Self {
             vsa,
             input,
+            goal,
             area,
             collapsed: false,
             children: Vec::new(),
+        }
+    }
+
+    #[inline(always)]
+    pub fn id(&self) -> Id {
+        rc_to_id(self.vsa.clone())
+    }
+
+    pub fn draw(&self, parent_id: Option<Id>, egui_ctx: &Context) {
+        // TODO:
+        // 1. replace pos with area
+        // 2. replace inp with input
+        let id = self.id();
+        match self.vsa.as_ref() {
+            VSA::Leaf(asts) => {
+                // TODO: put all ASTS in one window
+                // for ast in asts {
+                //     draw_ast(ast, pos, parent_id, ui);
+                // }
+            }
+            VSA::Union(vsas) => {
+                todo!()
+            }
+            VSA::Join { op, children, children_goals } => {
+                todo!()
+            }
+            VSA::Unlearned { start, goal } => {
+
+            }
         }
     }
 }

@@ -6,6 +6,7 @@ mod synth;
 mod draw;
 mod main_state;
 mod vsa_state;
+mod util;
 
 use main_state::VSAState;
 use synth::vsa::{VSA, Lit, Fun, AST};

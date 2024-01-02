@@ -9,74 +9,6 @@ use std::rc::Rc;
 
 const ARROW_ORDER: egui::layers::Order = egui::layers::Order::Middle;
 
-// potentially changes?
-pub fn rc_to_id<T>(rc: Rc<T>) -> Id {
-    let ptr = Rc::into_raw(rc);
-    Id::new(ptr as usize)
-}
-
-impl VSAState {
-    #[inline(always)]
-    pub fn id(&self) -> Id {
-        rc_to_id(self.vsa.clone())
-    }
-
-    pub fn draw(&self, parent_id: Option<Id>, egui_ctx: &Context) {
-        // TODO:
-        // 1. replace pos with area
-        // 2. replace inp with input
-        let id = self.id();
-        match self.vsa.as_ref() {
-            VSA::Leaf(asts) => {
-                // TODO: put all ASTS in one window
-                // for ast in asts {
-                //     draw_ast(ast, pos, parent_id, ui);
-                // }
-            }
-            VSA::Union(vsas) => {
-                // draw_union_root(id, pos, parent_id, egui_ctx);
-                self.area.show(egui_ctx, |ui| {
-                    ui.label("Union");
-                });
-                let y_offs = 60.0;
-                if vsas.len() > 1 {
-                    let x_offs = {
-                        let single_offs = &250.0; // can't copy f32 otherwise???
-                        let n = vsas.len() as i32;
-                        ((-n/2)..(n/2)).map(|i| (i as f32) * *single_offs)
-                    };
-                    for (vsa, x) in vsas.iter().zip(x_offs) {
-                        draw_vsa(vsa.clone(), pos + vec2(x, y_offs), inp, Some(id), egui_ctx);
-                    }
-                } else if vsas.len() == 1 {
-                    let vsa = &vsas[0];
-                    draw_vsa(vsa.clone(), pos + vec2(0.0, y_offs), inp, Some(id), egui_ctx);
-                }
-            }
-            VSA::Join { op, children, children_goals } => {
-                draw_join_root(id, op, &children_goals, inp, pos, parent_id, egui_ctx);
-                let y_offs = 60.0;
-                if children.len() > 1 {
-                    let x_offs = {
-                        let single_offs = &250.0; // can't copy f32 otherwise???
-                        let n = children.len() as i32;
-                        ((-n/2)..(n/2)).map(|i| (i as f32) * *single_offs)
-                    };
-                    for (vsa, x) in children.iter().zip(x_offs) {
-                        draw_vsa(vsa.clone(), pos + vec2(x, y_offs), inp, Some(id), egui_ctx);
-                    }
-                } else {
-                    let vsa = &children[0];
-                    draw_vsa(vsa.clone(), pos + vec2(0.0, y_offs), inp, Some(id), egui_ctx);
-                }
-            }
-            VSA::Unlearned { start, goal } => {
-                
-            }
-        }
-    }
-}
-
 pub fn draw_vsa<L, F>(vsa: Rc<VSA<L, F>>, pos: Vec2, inp: &L, parent_id: Option<Id>, ui: &Context)
 where
     L: Clone + Eq + std::hash::Hash + std::fmt::Debug + InputLit + std::fmt::Display,
@@ -127,11 +59,6 @@ where
             
         }
     }
-}
-
-#[inline(always)]
-pub fn vec2pos(v: Vec2) -> egui::Pos2 {
-    egui::Pos2::new(v.x, v.y)
 }
 
 pub fn floating_window(title: &str, id: Id, start_pos: Vec2) -> Window {
