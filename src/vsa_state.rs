@@ -1,8 +1,8 @@
 use crate::synth::vsa::*;
 use egui_macroquad::macroquad::prelude::*;
-use egui_macroquad::egui::{self, Id, Context};
+use egui_macroquad::egui::{self, Id, Context, Area};
 
-use crate::util::rc_to_id;
+use crate::util::{rc_to_id, vec2pos};
 
 use std::rc::Rc;
 
@@ -32,7 +32,8 @@ impl RichVSA {
             }
         };
 
-        let area = todo!();
+        let id = rc_to_id(vsa.clone());
+        let area = Area::new(id).default_pos(vec2pos(pos));
 
         Self {
             vsa,

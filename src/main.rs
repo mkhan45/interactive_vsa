@@ -8,9 +8,8 @@ mod main_state;
 mod vsa_state;
 mod util;
 
-use main_state::VSAState;
 use synth::vsa::{VSA, Lit, Fun, AST};
-use draw::vec2pos;
+use vsa_state::RichVSA;
 
 #[macroquad::main("Cloth")]
 async fn main() -> Result<(), std::io::Error> {
@@ -37,12 +36,12 @@ async fn main() -> Result<(), std::io::Error> {
     //     VSA::Union(vec!(Rc::new(VSA::Leaf(set))))
     // };
     let mut vsas = Vec::new();
-    vsas.push(VSAState {
-        vsa: flat_vsa,
-        area: egui::Area::new("vsa").default_pos(vec2pos(vec2(100.0, 100.0))),
-        input: Lit::StringConst("First Last".to_string()),
-        collapsed: false,
-    });
+    vsas.push(RichVSA::new(
+            flat_vsa, 
+            Lit::StringConst("First Last".to_string()),
+            Lit::StringConst("F L".to_string()),
+            Vec2::new(100.0, 100.0),
+    ));
     let mut main_state = main_state::MainState::new(vsas);
     loop {
         next_frame().await;
