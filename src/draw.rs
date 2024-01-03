@@ -5,8 +5,6 @@ use egui_macroquad::macroquad::math::{Vec2, vec2};
 
 use std::rc::Rc;
 
-const ARROW_ORDER: egui::layers::Order = egui::layers::Order::Middle;
-
 // pub fn draw_vsa<L, F>(vsa: Rc<VSA<L, F>>, pos: Vec2, inp: &L, parent_id: Option<Id>, ui: &Context)
 // where
 //     L: Clone + Eq + std::hash::Hash + std::fmt::Debug + InputLit + std::fmt::Display,
