@@ -11,6 +11,8 @@ mod util;
 use synth::vsa::{VSA, Lit, Fun, AST};
 use vsa_state::RichVSA;
 
+use std::rc::Rc;
+
 #[macroquad::main("Cloth")]
 async fn main() -> Result<(), std::io::Error> {
     // use crate::synth::vsa::Lit;
@@ -30,22 +32,25 @@ async fn main() -> Result<(), std::io::Error> {
     println!("{}", ast.unwrap());
     println!("{:?}", flat_vsa);
 
-    // let vsa = {
-    //     let mut set = std::collections::HashSet::new();
-    //     set.insert(Rc::new(AST::Lit(Lit::StringConst("First Last".to_string()))));
-    //     VSA::Union(vec!(Rc::new(VSA::Leaf(set))))
-    // };
+    let vsa = Rc::new({
+        let mut set = std::collections::HashSet::new();
+        set.insert(Rc::new(AST::Lit(Lit::StringConst("First Last".to_string()))));
+        VSA::Union(vec![
+                   Rc::new(VSA::Leaf(set.clone())),
+                   Rc::new(VSA::Leaf(set))
+        ])
+    });
     let mut vsas = Vec::new();
     vsas.push(RichVSA::new(
-            flat_vsa, 
+            vsa, 
             Lit::StringConst("First Last".to_string()),
             Lit::StringConst("F L".to_string()),
             Vec2::new(100.0, 100.0),
     ));
     let mut main_state = main_state::MainState::new(vsas);
     loop {
-        main_state.update();
         next_frame().await;
         main_state.draw();
+        main_state.update();
     }
 }

@@ -127,16 +127,19 @@ impl RichVSA {
             // possibly only look at adjacent children
             let mut x_force = 0.0;
             let i_rect = self.children[i].subtree_rect(egui_ctx).unwrap();
-            for j in (i+1)..self.children.len() {
+            for j in 0..self.children.len() {
+                if i == j {
+                    continue;
+                }
                 let j_rect = self.children[j].subtree_rect(egui_ctx).unwrap();
                 let x_dist = i_rect.center().x - j_rect.center().x;
                 if i_rect.expand(10.0).intersects(j_rect) {
                     // repel
-                    x_force += x_dist.signum() * 0.1;
+                    x_force += x_dist.signum() * 1.0;
                 }
             }
 
-            let old_pos = i_rect.left_top() + egui::Vec2::new(10.0 * i as f32, 0.0);
+            let old_pos = i_rect.left_top();
             let new_area = self.children[i].area.current_pos(egui::Pos2::new(old_pos.x + x_force, old_pos.y));
             self.children[i].area = new_area;
         }
