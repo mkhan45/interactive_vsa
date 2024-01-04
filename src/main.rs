@@ -44,8 +44,8 @@ async fn main() -> Result<(), std::io::Error> {
     ));
     let mut main_state = main_state::MainState::new(vsas);
     loop {
+        main_state.update();
         next_frame().await;
         main_state.draw();
-        main_state.update();
     }
 }
