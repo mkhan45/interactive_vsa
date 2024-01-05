@@ -18,12 +18,12 @@ async fn main() -> Result<(), std::io::Error> {
     // use crate::synth::vsa::Lit;
     let examples = vec![
         (
-            Lit::StringConst("Hello".to_string()),
-            Lit::StringConst("Hello World".to_string()),
+            Lit::StringConst("First Last".to_string()),
+            Lit::StringConst("F L".to_string()),
         ),
         (
-            Lit::StringConst("Goodbye".to_string()),
-            Lit::StringConst("Goodbye World".to_string()),
+            Lit::StringConst("Anopther Name".to_string()),
+            Lit::StringConst("A N".to_string()),
         ),
     ];
 
@@ -43,8 +43,8 @@ async fn main() -> Result<(), std::io::Error> {
     let mut vsas = Vec::new();
     vsas.push(RichVSA::new(
             flat_vsa, 
-            Lit::StringConst("Hello".to_string()),
-            Lit::StringConst("Hello World".to_string()),
+            Lit::StringConst("First Last".to_string()),
+            Lit::StringConst("F L".to_string()),
             Vec2::new(100.0, 100.0),
     ));
     let mut main_state = main_state::MainState::new(vsas);

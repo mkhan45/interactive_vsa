@@ -30,8 +30,18 @@ impl MainState {
     pub fn update(&mut self) {
         egui_macroquad::cfg(|egui_ctx| {
             for vsa in &mut self.vsas {
+                vsa.zero_last_move();
+            }
+            for vsa in &mut self.vsas {
                 // TODO: figure out how to disable when dragging
                 vsa.repel_children(egui_ctx);
+
+                if egui_ctx.input(|inp| dbg!(inp.key_down(egui::Key::Z))) {
+                    vsa.drag_subtrees(egui_ctx);
+                }
+            }
+            for vsa in &mut self.vsas {
+                vsa.update_subtree(egui_ctx);
             }
         });
     }
