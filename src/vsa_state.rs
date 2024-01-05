@@ -101,6 +101,16 @@ impl RichVSA {
                 });
             }
         }
+     
+        if let Some(rect) = self.rect(egui_ctx) {
+            let painter = egui_ctx.layer_painter(egui::layers::LayerId::new(ARROW_ORDER, self.id()));
+            painter.rect_stroke(rect, egui::Rounding::ZERO, egui::Stroke::new(1.0, egui::Color32::WHITE));
+        }
+
+        if let Some(rect) = self.subtree_rect(egui_ctx) {
+            let painter = egui_ctx.layer_painter(egui::layers::LayerId::new(ARROW_ORDER, self.id()));
+            painter.rect_stroke(rect, egui::Rounding::ZERO, egui::Stroke::new(1.0, egui::Color32::RED));
+        }
     }
 
     pub fn rect(&self, egui_ctx: &Context) -> Option<Rect> {
@@ -133,15 +143,29 @@ impl RichVSA {
                 }
                 let j_rect = self.children[j].subtree_rect(egui_ctx).unwrap();
                 let x_dist = i_rect.center().x - j_rect.center().x;
-                if i_rect.expand(10.0).intersects(j_rect) {
+                if i_rect.expand(5.0).intersects(j_rect) {
                     // repel
                     x_force += x_dist.signum() * 1.0;
+
+                    let painter = egui_ctx.layer_painter(egui::layers::LayerId::new(ARROW_ORDER, self.id()));
+                    painter.rect_stroke(i_rect, egui::Rounding::ZERO, egui::Stroke::new(1.0, egui::Color32::YELLOW));
+                    painter.rect_stroke(j_rect, egui::Rounding::ZERO, egui::Stroke::new(1.0, egui::Color32::YELLOW));
                 }
             }
 
-            let old_pos = i_rect.left_top();
-            let new_area = self.children[i].area.current_pos(egui::Pos2::new(old_pos.x + x_force, old_pos.y));
-            self.children[i].area = new_area;
+            // TODO:
+            // improved algo:
+            //  - find highest child that intersects another subtree, and repel only it
+            self.children[i].move_subtree(Vec2::new(x_force, 0.0), egui_ctx);
+        }
+    }
+
+    pub fn move_subtree(&mut self, delta: Vec2, egui_ctx: &Context) {
+        let old_pos = self.rect(egui_ctx).unwrap().left_top();
+        let new_area = self.area.current_pos(egui::Pos2::new(old_pos.x + delta.x, old_pos.y + delta.y));
+        self.area = new_area;
+        for child in &mut self.children {
+            child.move_subtree(delta, egui_ctx);
         }
     }
 }
