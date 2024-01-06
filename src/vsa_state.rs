@@ -1,6 +1,6 @@
 use crate::synth::vsa::*;
 use egui_macroquad::macroquad::prelude::*;
-use egui_macroquad::egui::{self, Id, Context, Area, Rect};
+use egui_macroquad::egui::{self, Id, Context, Area, Rect, InnerResponse};
 
 use crate::util::{rc_to_id, vec2pos};
 
@@ -16,6 +16,7 @@ pub struct RichVSA {
     pub last_move: Vec2,
     pub collapsed: bool,
     pub children: Vec<RichVSA>,
+    pub drag: Option<Vec2>,
 }
 
 impl RichVSA {
@@ -50,6 +51,7 @@ impl RichVSA {
             last_move: Vec2::ZERO,
             collapsed: false,
             children,
+            drag: None,
         }
     }
 
@@ -58,7 +60,7 @@ impl RichVSA {
         rc_to_id(self.vsa.clone())
     }
 
-    pub fn draw(&self, egui_ctx: &Context) {
+    pub fn draw(&mut self, egui_ctx: &Context) {
         match self.vsa.as_ref() {
             VSA::Leaf(asts) => {
                 self.area.show(egui_ctx, |ui| {
@@ -69,17 +71,21 @@ impl RichVSA {
                 });
             }
             VSA::Union(_) => {
-                self.area.show(egui_ctx, |ui| {
+                let InnerResponse { response, .. } = self.area.show(egui_ctx, |ui| {
                     ui.label("Union");
                     ui.label(format!("{} -> {}", self.input, self.goal));
                 });
-                for vsa in &self.children {
+                let edrag = 
+                    response.dragged_by(egui::PointerButton::Primary).then(|| response.drag_delta());
+                self.drag = edrag.map(|drag| Vec2::new(drag.x, drag.y));
+                let id = self.id();
+                for vsa in &mut self.children {
                     vsa.draw(egui_ctx);
-                    draw_area_arrows(self.id(), vsa.id(), egui_ctx);
+                    draw_area_arrows(id, vsa.id(), egui_ctx);
                 }
             }
             VSA::Join { op, children_goals, .. } => {
-                self.area.show(egui_ctx, |ui| {
+                let InnerResponse { response, .. } = self.area.show(egui_ctx, |ui| {
                     ui.label("Join");
                     ui.label(format!("{} -> {}", self.input, self.goal));
 
@@ -88,9 +94,13 @@ impl RichVSA {
                     }).collect::<Vec<_>>().join(", ");
                     ui.label(format!("{:?}({})", op, args));
                 });
-                for vsa in self.children.iter() {
+                let edrag = 
+                    response.dragged_by(egui::PointerButton::Primary).then(|| response.drag_delta());
+                self.drag = edrag.map(|drag| Vec2::new(drag.x, drag.y));
+                let id = self.id();
+                for vsa in self.children.iter_mut() {
                     vsa.draw(egui_ctx);
-                    draw_area_arrows(self.id(), vsa.id(), egui_ctx);
+                    draw_area_arrows(id, vsa.id(), egui_ctx);
                 }
             }
             VSA::Unlearned { start, goal } => {
@@ -106,10 +116,10 @@ impl RichVSA {
             painter.rect_stroke(rect, egui::Rounding::ZERO, egui::Stroke::new(1.0, egui::Color32::WHITE));
         }
 
-        if let Some(rect) = self.subtree_rect(egui_ctx) {
-            let painter = egui_ctx.layer_painter(egui::layers::LayerId::new(ARROW_ORDER, self.id()));
-            painter.rect_stroke(rect, egui::Rounding::ZERO, egui::Stroke::new(1.0, egui::Color32::RED));
-        }
+        // if let Some(rect) = self.subtree_rect(egui_ctx) {
+        //     let painter = egui_ctx.layer_painter(egui::layers::LayerId::new(ARROW_ORDER, self.id()));
+        //     painter.rect_stroke(rect, egui::Rounding::ZERO, egui::Stroke::new(1.0, egui::Color32::RED));
+        // }
     }
 
     pub fn rect(&self, egui_ctx: &Context) -> Option<Rect> {
@@ -139,13 +149,16 @@ impl RichVSA {
         })
     }
 
-    pub fn drag_subtrees(&mut self, egui_ctx: &Context) {
-        let is_dragged = egui_ctx.memory(|mem| mem.is_being_dragged(self.id()));
-        // is_dragged is always false
-        // can probably do a workaround by checking collapsed and unconditionally moving subtrees
-        if is_dragged {
-            let delta = egui_ctx.input(|inp| inp.pointer.delta());
-            self.move_subtree(Vec2::new(delta.x, delta.y));
+    pub fn drag_subtrees(&mut self) {
+        if let Some(drag) = self.drag {
+            for child in &mut self.children {
+                child.move_subtree(drag);
+            }
+            self.drag = None;
+        } else {
+            for child in &mut self.children {
+                child.drag_subtrees();
+            }
         }
     }
 
@@ -171,8 +184,8 @@ impl RichVSA {
                     x_force += x_dist.signum() * 5.0;
 
                     let painter = egui_ctx.layer_painter(egui::layers::LayerId::new(ARROW_ORDER, self.id()));
-                    painter.rect_stroke(i_rect, egui::Rounding::ZERO, egui::Stroke::new(1.0, egui::Color32::YELLOW));
-                    painter.rect_stroke(j_rect, egui::Rounding::ZERO, egui::Stroke::new(1.0, egui::Color32::YELLOW));
+                    // painter.rect_stroke(i_rect, egui::Rounding::ZERO, egui::Stroke::new(1.0, egui::Color32::YELLOW));
+                    // painter.rect_stroke(j_rect, egui::Rounding::ZERO, egui::Stroke::new(1.0, egui::Color32::YELLOW));
                 }
             }
 

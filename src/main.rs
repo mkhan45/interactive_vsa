@@ -3,7 +3,6 @@ use egui_macroquad::egui;
 use macroquad::prelude::*;
 
 mod synth;
-mod draw;
 mod main_state;
 mod vsa_state;
 mod util;
@@ -35,6 +34,7 @@ async fn main() -> Result<(), std::io::Error> {
     // let vsa = Rc::new({
     //     let mut set = std::collections::HashSet::new();
     //     set.insert(Rc::new(AST::Lit(Lit::StringConst("First Last".to_string()))));
+    //     // VSA::Leaf(set)
     //     VSA::Union(vec![
     //                Rc::new(VSA::Leaf(set.clone())),
     //                Rc::new(VSA::Leaf(set))

@@ -36,8 +36,8 @@ impl MainState {
                 // TODO: figure out how to disable when dragging
                 vsa.repel_children(egui_ctx);
 
-                if egui_ctx.input(|inp| dbg!(inp.key_down(egui::Key::Z))) {
-                    vsa.drag_subtrees(egui_ctx);
+                if egui_ctx.input(|inp| inp.key_down(egui::Key::Z)) {
+                    vsa.drag_subtrees();
                 }
             }
             for vsa in &mut self.vsas {
@@ -46,10 +46,10 @@ impl MainState {
         });
     }
 
-    pub fn draw(&self) {
+    pub fn draw(&mut self) {
         egui_macroquad::ui(|egui_ctx| {
             clear_background(BLACK);
-            for vsa in &self.vsas {
+            for vsa in &mut self.vsas {
                 vsa.draw(egui_ctx);
                 // draw_vsa(vsa.vsa.clone(), Vec2::new(100.0, 100.0), &vsa.input, None, egui_ctx);
             }
