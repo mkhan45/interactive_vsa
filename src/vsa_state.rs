@@ -21,19 +21,17 @@ pub struct RichVSA {
 
 impl RichVSA {
     pub fn new(vsa: Rc<VSA<Lit, Fun>>, input: Lit, goal: Lit, pos: Vec2) -> Self {
+        let y_offs = 120.0;
+        let x_offs = 100.0;
         let children = match vsa.as_ref() {
             VSA::Leaf(_) | VSA::Unlearned { .. } => Vec::new(),
             VSA::Union(vsas) => {
-                let y_offs = 100.0;
-                let x_offs = 100.0;
                 vsas.into_iter().enumerate().map(|(i, vsa)| {
                     // TODO: choose good pos
                     RichVSA::new(vsa.clone(), input.clone(), goal.clone(), pos + Vec2::new(x_offs * i as f32, y_offs))
                 }).collect()
             }
             VSA::Join { children, children_goals, .. } => {
-                let y_offs = 100.0;
-                let x_offs = 100.0;
                 children.iter().zip(children_goals.iter()).enumerate().map(|(i, (vsa, goal))| {
                     RichVSA::new(vsa.clone(), input.clone(), goal.clone(), pos + Vec2::new(x_offs * i as f32, y_offs))
                 }).collect()
@@ -60,6 +58,13 @@ impl RichVSA {
         rc_to_id(self.vsa.clone())
     }
 
+    pub fn set_vsa_style(ui: &mut egui::Ui) {
+        // doesnt do anything
+        let style = ui.style_mut();
+        style.spacing.item_spacing = egui::Vec2::new(10.0, 10.0);
+        style.spacing.window_margin = egui::style::Margin::same(10.0);
+    }
+
     pub fn draw(&mut self, egui_ctx: &Context) {
         let learn_pos = self.rect(egui_ctx).map(|r| {
             let egui::Pos2 { x, y } = r.left_top();
@@ -68,6 +73,7 @@ impl RichVSA {
         match self.vsa.as_ref() {
             VSA::Leaf(asts) => {
                 self.area.show(egui_ctx, |ui| {
+                    Self::set_vsa_style(ui);
                     ui.label(format!("{} -> {}", self.input, self.goal));
                     for ast in asts {
                         ui.label(format!("{}", ast));
@@ -76,7 +82,7 @@ impl RichVSA {
             }
             VSA::Union(_) => {
                 let InnerResponse { response, .. } = self.area.show(egui_ctx, |ui| {
-                    ui.label("Union");
+                    Self::set_vsa_style(ui);
                     ui.label(format!("{} -> {}", self.input, self.goal));
                 });
                 let edrag = 
@@ -90,7 +96,7 @@ impl RichVSA {
             }
             VSA::Join { op, children_goals, .. } => {
                 let InnerResponse { response, .. } = self.area.show(egui_ctx, |ui| {
-                    ui.label("Join");
+                    Self::set_vsa_style(ui);
                     ui.label(format!("{} -> {}", self.input, self.goal));
 
                     let args = children_goals.iter().map(|goal| {
@@ -109,6 +115,7 @@ impl RichVSA {
             }
             VSA::Unlearned { start, goal } => {
                 self.area.show(egui_ctx, |ui| {
+                    Self::set_vsa_style(ui);
                     ui.label("Unlearned");
                     ui.label(format!("{} -> {}", start, goal));
                     if ui.button("Learn").clicked() {
@@ -143,7 +150,7 @@ impl RichVSA {
      
         if let Some(rect) = self.rect(egui_ctx) {
             let painter = egui_ctx.layer_painter(egui::layers::LayerId::new(ARROW_ORDER, self.id()));
-            painter.rect_stroke(rect, egui::Rounding::ZERO, egui::Stroke::new(1.0, egui::Color32::WHITE));
+            painter.rect_stroke(rect, egui::Rounding::ZERO, egui::Stroke::new(1.0, egui::Color32::BLACK));
         }
 
         // if let Some(rect) = self.subtree_rect(egui_ctx) {
@@ -154,7 +161,7 @@ impl RichVSA {
 
     pub fn rect(&self, egui_ctx: &Context) -> Option<Rect> {
         egui_ctx.memory(|mem| {
-            mem.area_rect(self.id())
+            mem.area_rect(self.id()).map(|r| r.expand(10.0))
         })
     }
 
@@ -209,7 +216,7 @@ impl RichVSA {
                 }
                 let j_rect = self.children[j].updated_subtree_rect(egui_ctx).unwrap();
                 let x_dist = i_rect.center().x - j_rect.center().x;
-                if i_rect.expand(5.0).intersects(j_rect.expand(5.0)) {
+                if i_rect.expand(15.0).intersects(j_rect.expand(15.0)) {
                     // repel
                     x_force += x_dist.signum() * 5.0;
 
@@ -253,11 +260,12 @@ impl RichVSA {
 }
 
 fn draw_area_arrows(start_id: Id, end_id: Id, egui_ctx: &Context) {
+    // TODO: use .rect()
     let positions = egui_ctx.memory(|mem| {
         let start_rect = mem.area_rect(start_id);
         let end_rect = mem.area_rect(end_id);
         start_rect.zip(end_rect).map(|(start_rect, end_rect)| {
-            (start_rect.center_bottom(), end_rect.center_top())
+            (start_rect.expand(10.0).center_bottom(), end_rect.expand(10.0).center_top())
         })
     });
 
@@ -268,6 +276,6 @@ fn draw_area_arrows(start_id: Id, end_id: Id, egui_ctx: &Context) {
 
 fn draw_arrow(id: Id, sp: egui::Pos2, ep: egui::Pos2, egui_ctx: &Context) {
     let painter = egui_ctx.layer_painter(egui::layers::LayerId::new(ARROW_ORDER, id));
-    painter.line_segment([sp, ep], egui::Stroke::new(1.0, egui::Color32::WHITE));
+    painter.line_segment([sp, ep], egui::Stroke::new(1.0, egui::Color32::BLACK));
     // painter.arrow(sp, vec, egui::Stroke::new(1.0, egui::Color32::WHITE));
 }

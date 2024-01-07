@@ -76,7 +76,7 @@ impl MainState {
 
     pub fn draw(&mut self) {
         egui_macroquad::ui(|egui_ctx| {
-            clear_background(BLACK);
+            clear_background(WHITE);
 
             // egui::TopBottomPanel::top("menu_bar").show(egui_ctx, |ui| {
             //     egui::gui_zoom::zoom_menu_buttons(ui);
@@ -94,7 +94,7 @@ impl MainState {
                 egui::Align2::LEFT_TOP,
                 "Hold middle mouse to drag, hold Z to move a whole subtree",
                 egui::FontId::monospace(18.0),
-                egui::Color32::WHITE,
+                egui::Color32::BLACK,
             );
         });
         egui_macroquad::draw();
