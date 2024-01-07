@@ -65,7 +65,7 @@ impl RichVSA {
         style.spacing.window_margin = egui::style::Margin::same(10.0);
     }
 
-    pub fn draw(&mut self, egui_ctx: &Context) {
+    pub fn draw(&mut self, labels: bool, egui_ctx: &Context) {
         let learn_pos = self.rect(egui_ctx).map(|r| {
             let egui::Pos2 { x, y } = r.left_top();
             vec2(x, y)
@@ -74,7 +74,10 @@ impl RichVSA {
             VSA::Leaf(asts) => {
                 self.area.show(egui_ctx, |ui| {
                     Self::set_vsa_style(ui);
-                    ui.label(format!("{} -> {}", self.input, self.goal));
+                    if labels {
+                        ui.label("Leaf");
+                        ui.label(format!("{} → {}", self.input, self.goal));
+                    }
                     for ast in asts {
                         ui.label(format!("{}", ast));
                     }
@@ -83,21 +86,27 @@ impl RichVSA {
             VSA::Union(_) => {
                 let InnerResponse { response, .. } = self.area.show(egui_ctx, |ui| {
                     Self::set_vsa_style(ui);
-                    ui.label(format!("{} -> {}", self.input, self.goal));
+                    if labels {
+                        ui.label("Union");
+                    }
+                    ui.label(format!("{} → {}", self.input, self.goal));
                 });
                 let edrag = 
                     response.dragged_by(egui::PointerButton::Primary).then(|| response.drag_delta());
                 self.drag = edrag.map(|drag| Vec2::new(drag.x, drag.y));
                 let id = self.id();
                 for vsa in &mut self.children {
-                    vsa.draw(egui_ctx);
+                    vsa.draw(labels, egui_ctx);
                     draw_area_arrows(id, vsa.id(), egui_ctx);
                 }
             }
             VSA::Join { op, children_goals, .. } => {
                 let InnerResponse { response, .. } = self.area.show(egui_ctx, |ui| {
                     Self::set_vsa_style(ui);
-                    ui.label(format!("{} -> {}", self.input, self.goal));
+                    if labels {
+                        ui.label(format!("{:?} Join", op));
+                        ui.label(format!("{} → {}", self.input, self.goal));
+                    }
 
                     let args = children_goals.iter().map(|goal| {
                         format!("{}", goal)
@@ -109,7 +118,7 @@ impl RichVSA {
                 self.drag = edrag.map(|drag| Vec2::new(drag.x, drag.y));
                 let id = self.id();
                 for vsa in self.children.iter_mut() {
-                    vsa.draw(egui_ctx);
+                    vsa.draw(labels, egui_ctx);
                     draw_area_arrows(id, vsa.id(), egui_ctx);
                 }
             }
@@ -117,7 +126,7 @@ impl RichVSA {
                 self.area.show(egui_ctx, |ui| {
                     Self::set_vsa_style(ui);
                     ui.label("Unlearned");
-                    ui.label(format!("{} -> {}", start, goal));
+                    ui.label(format!("{} → {}", start, goal));
                     if ui.button("Learn").clicked() {
                         use std::collections::HashMap;
                         let mut all_cache = HashMap::new();

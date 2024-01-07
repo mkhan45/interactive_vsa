@@ -15,6 +15,7 @@ pub struct MainState {
     pub vsas: Vec<RichVSA>,
     pub camera: Camera,
     pub frames_since_last_drag: Option<usize>,
+    pub vsa_labels: bool,
 }
 
 impl MainState {
@@ -26,6 +27,7 @@ impl MainState {
                 zoom: 1.0,
             },
             frames_since_last_drag: None,
+            vsa_labels: false,
         }
     }
 
@@ -38,12 +40,12 @@ impl MainState {
                 // TODO: figure out how to disable when dragging
                 vsa.repel_children(egui_ctx);
 
-                if egui_ctx.input(|inp| inp.key_down(egui::Key::Z)) {
+                if egui_ctx.input(|inp| inp.modifiers.command_only()) {
                     vsa.drag_subtrees();
                 }
             }
             egui_ctx.input(|inp| {
-                if inp.pointer.middle_down() {
+                if inp.pointer.middle_down() || inp.modifiers.shift {
                     let delta = inp.pointer.delta();
                     for vsa in &mut self.vsas {
                         vsa.move_subtree(vec2(delta.x, delta.y));
@@ -83,19 +85,22 @@ impl MainState {
             // });
 
             for vsa in &mut self.vsas {
-                vsa.draw(egui_ctx);
+                vsa.draw(self.vsa_labels, egui_ctx);
                 // draw_vsa(vsa.vsa.clone(), Vec2::new(100.0, 100.0), &vsa.input, None, egui_ctx);
             }
 
-            let help_id = egui::Id::new("help");
-            let painter = egui_ctx.layer_painter(egui::layers::LayerId::new(HELP_ORDER, help_id));
-            painter.text(
-                egui::Pos2::new(10.0, 10.0),
-                egui::Align2::LEFT_TOP,
-                "Hold middle mouse to drag, hold Z to move a whole subtree",
-                egui::FontId::monospace(18.0),
-                egui::Color32::BLACK,
-            );
+            egui::TopBottomPanel::top("top bar").show(egui_ctx, |ui| {
+                ui.horizontal(|ui| {
+                    let vsa_label_text = egui::RichText::new("VSA Labels").size(18.0);
+                    ui.checkbox(&mut self.vsa_labels, vsa_label_text);
+
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        ui.label(
+                            "Hold middle mouse or shift to drag, hold control click to move a whole subtree",
+                        )
+                    });
+                });
+            });
         });
         egui_macroquad::draw();
     }
