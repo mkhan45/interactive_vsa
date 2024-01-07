@@ -4,6 +4,8 @@ use egui_macroquad::egui;
 
 use crate::vsa_state::*;
 
+const HELP_ORDER: egui::layers::Order = egui::layers::Order::Middle;
+
 pub struct Camera {
     pub pos: Vec2,
     pub zoom: f32,
@@ -40,6 +42,15 @@ impl MainState {
                     vsa.drag_subtrees();
                 }
             }
+            egui_ctx.input(|inp| {
+                if inp.pointer.middle_down() {
+                    let delta = inp.pointer.delta();
+                    for vsa in &mut self.vsas {
+                        vsa.move_subtree(vec2(delta.x, delta.y));
+                    }
+                }
+            });
+
             for vsa in &mut self.vsas {
                 vsa.update_subtree(egui_ctx);
             }
@@ -75,6 +86,16 @@ impl MainState {
                 vsa.draw(egui_ctx);
                 // draw_vsa(vsa.vsa.clone(), Vec2::new(100.0, 100.0), &vsa.input, None, egui_ctx);
             }
+
+            let help_id = egui::Id::new("help");
+            let painter = egui_ctx.layer_painter(egui::layers::LayerId::new(HELP_ORDER, help_id));
+            painter.text(
+                egui::Pos2::new(10.0, 10.0),
+                egui::Align2::LEFT_TOP,
+                "Hold middle mouse to drag, hold Z to move a whole subtree",
+                egui::FontId::monospace(18.0),
+                egui::Color32::WHITE,
+            );
         });
         egui_macroquad::draw();
     }
