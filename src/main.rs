@@ -47,9 +47,13 @@ async fn main() -> Result<(), std::io::Error> {
     //                Rc::new(VSA::Leaf(set))
     //     ])
     // });
+    let unlearned_vsa = Rc::new(VSA::<_, Fun>::Unlearned {
+        start: Lit::StringConst("First Last".to_string()),
+        goal: Lit::StringConst("F L".to_string()),
+    });
     let mut vsas = Vec::new();
     vsas.push(RichVSA::new(
-            flat_vsa, 
+            unlearned_vsa, 
             Lit::StringConst("First Last".to_string()),
             Lit::StringConst("F L".to_string()),
             Vec2::new(100.0, 100.0),

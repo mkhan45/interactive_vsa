@@ -61,6 +61,10 @@ impl RichVSA {
     }
 
     pub fn draw(&mut self, egui_ctx: &Context) {
+        let learn_pos = self.rect(egui_ctx).map(|r| {
+            let egui::Pos2 { x, y } = r.left_top();
+            vec2(x, y)
+        });
         match self.vsa.as_ref() {
             VSA::Leaf(asts) => {
                 self.area.show(egui_ctx, |ui| {
@@ -108,7 +112,29 @@ impl RichVSA {
                     ui.label("Unlearned");
                     ui.label(format!("{} -> {}", start, goal));
                     if ui.button("Learn").clicked() {
-                        todo!();
+                        use std::collections::HashMap;
+                        let mut all_cache = HashMap::new();
+                        let mut bank = crate::synth::bank::Bank::new();
+                        let mut regex_bank = crate::synth::bank::Bank::new();
+                        crate::synth::bottom_up(
+                            std::iter::once(start),
+                            5,
+                            &mut all_cache,
+                            &mut bank,
+                            &mut regex_bank,
+                            false
+                        );
+                        let mut cache = // idr what this does
+                            all_cache.iter().map(|(results, ast)| (results[0].clone(), ast.clone())).collect();
+                        let new_vsa_rc = crate::synth::learn_to_depth(start, goal, &mut cache, &bank, 1);
+                        let new_vsa = Rc::into_inner(new_vsa_rc);
+                        let self_mut = Rc::as_ptr(&self.vsa) as *mut _;
+                        unsafe { std::ptr::write(self_mut, new_vsa) };
+                        let rich_vsa = 
+                            RichVSA::new(
+                                self.vsa.clone(), self.input.clone(), self.goal.clone(), learn_pos.unwrap()
+                            );
+                        self.children = rich_vsa.children;
                         // TODO: send a signal and learn to depth
                     }
                 });
