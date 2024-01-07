@@ -107,6 +107,10 @@ impl RichVSA {
                 self.area.show(egui_ctx, |ui| {
                     ui.label("Unlearned");
                     ui.label(format!("{} -> {}", start, goal));
+                    if ui.button("Learn").clicked() {
+                        todo!();
+                        // TODO: send a signal and learn to depth
+                    }
                 });
             }
         }
@@ -183,7 +187,7 @@ impl RichVSA {
                     // repel
                     x_force += x_dist.signum() * 5.0;
 
-                    let painter = egui_ctx.layer_painter(egui::layers::LayerId::new(ARROW_ORDER, self.id()));
+                    // let painter = egui_ctx.layer_painter(egui::layers::LayerId::new(ARROW_ORDER, self.id()));
                     // painter.rect_stroke(i_rect, egui::Rounding::ZERO, egui::Stroke::new(1.0, egui::Color32::YELLOW));
                     // painter.rect_stroke(j_rect, egui::Rounding::ZERO, egui::Stroke::new(1.0, egui::Color32::YELLOW));
                 }

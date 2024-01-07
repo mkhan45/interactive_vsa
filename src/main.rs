@@ -31,6 +31,13 @@ async fn main() -> Result<(), std::io::Error> {
     println!("{}", ast.unwrap());
     println!("{:?}", flat_vsa);
 
+    egui_macroquad::cfg(|egui_ctx| {
+        egui_ctx.style_mut(|style| {
+            style.override_font_id = Some(egui::FontId::monospace(16.0));
+            style.wrap = Some(false);
+        });
+    });
+
     // let vsa = Rc::new({
     //     let mut set = std::collections::HashSet::new();
     //     set.insert(Rc::new(AST::Lit(Lit::StringConst("First Last".to_string()))));

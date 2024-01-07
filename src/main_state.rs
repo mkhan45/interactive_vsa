@@ -43,12 +43,34 @@ impl MainState {
             for vsa in &mut self.vsas {
                 vsa.update_subtree(egui_ctx);
             }
+
+            // let scroll = egui_ctx.input(|inp| inp.scroll_delta);
+            // if scroll.y != 0.0 {
+            //     bad
+            //     self.camera.zoom *= 1.0 + scroll.y / 10.0;
+            //     egui_ctx.style_mut(|style| {
+            //         style.override_font_id = Some(egui::FontId::monospace(16.0 * self.camera.zoom));
+            //     });
+            // }
+
+            // // let scroll = egui_ctx.input(|inp| inp.scroll_delta);
+            // if scroll.y != 0.0 {
+            //     let old_zoom = egui_ctx.zoom_factor();
+            //     let new_zoom = old_zoom * (1.0 + scroll.y / 10.0);
+            //     // crashes
+            //     egui_ctx.set_zoom_factor(new_zoom);
+            // }
         });
     }
 
     pub fn draw(&mut self) {
         egui_macroquad::ui(|egui_ctx| {
             clear_background(BLACK);
+
+            // egui::TopBottomPanel::top("menu_bar").show(egui_ctx, |ui| {
+            //     egui::gui_zoom::zoom_menu_buttons(ui);
+            // });
+
             for vsa in &mut self.vsas {
                 vsa.draw(egui_ctx);
                 // draw_vsa(vsa.vsa.clone(), Vec2::new(100.0, 100.0), &vsa.input, None, egui_ctx);
