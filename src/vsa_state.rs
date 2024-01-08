@@ -209,6 +209,10 @@ impl RichVSA {
         }
     }
 
+    pub fn any_children_dragged(&self) -> bool {
+        self.drag.is_some() || self.children.iter().any(|child| child.any_children_dragged())
+    }
+
     pub fn repel_children(&mut self, egui_ctx: &Context) {
         if self.updated_subtree_rect(egui_ctx).is_none() {
             return;
@@ -216,6 +220,10 @@ impl RichVSA {
 
         for i in 0..self.children.len() {
             self.children[i].repel_children(egui_ctx);
+
+            if self.children[i].any_children_dragged() {
+                continue;
+            }
 
             // possibly only look at adjacent children
             let mut x_force = 0.0;
