@@ -16,6 +16,15 @@ pub struct MainState {
     pub camera: Camera,
     pub frames_since_last_drag: Option<usize>,
     pub vsa_labels: bool,
+    pub current_tool: Tool,
+    pub learn_depth: usize,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum Tool {
+    Drag,
+    Select,
+    Prune,
 }
 
 impl MainState {
@@ -28,6 +37,8 @@ impl MainState {
             },
             frames_since_last_drag: None,
             vsa_labels: false,
+            current_tool: Tool::Drag,
+            learn_depth: 1,
         }
     }
 
@@ -40,10 +51,11 @@ impl MainState {
                 // TODO: figure out how to disable when dragging
                 vsa.repel_children(egui_ctx);
 
-                if egui_ctx.input(|inp| inp.modifiers.command_only()) {
+                if self.current_tool == Tool::Drag && egui_ctx.input(|inp| inp.modifiers.command_only()) {
                     vsa.drag_subtrees();
                 }
             }
+
             egui_ctx.input(|inp| {
                 if inp.pointer.middle_down() || inp.modifiers.shift {
                     let delta = inp.pointer.delta();
@@ -52,6 +64,29 @@ impl MainState {
                     }
                 }
             });
+
+            let (clicked, pos_opt) = egui_ctx.input(|inp| {
+                (inp.pointer.primary_down(), inp.pointer.interact_pos())
+            });
+
+            if [Tool::Select, Tool::Prune].contains(&self.current_tool) && clicked {
+                let pos = pos_opt.unwrap();
+                let clicked_node = 
+                    self.vsas.iter().find_map(|vsa| vsa.find_clicked_node(pos, egui_ctx)).map(|n| n.vsa.clone());
+                let parent = clicked_node.clone().map(|child| {
+                    self.vsas.iter_mut().find_map(|vsa| vsa.find_parent_of_vsa(&child))
+                }).flatten();
+                if let Some((parent, child)) = parent.zip(clicked_node) {
+                    if matches!(parent.vsa.as_ref(), VSA::Union(_)) {
+                        if self.current_tool == Tool::Select {
+                            parent.children.retain(|c| std::rc::Rc::ptr_eq(&c.vsa, &child));
+                            self.current_tool = Tool::Drag;
+                        } else /* if self.current_tool == Tool::Prune */{
+                            parent.children.retain(|c| !std::rc::Rc::ptr_eq(&c.vsa, &child));
+                        }
+                    }
+                }
+            }
 
             for vsa in &mut self.vsas {
                 vsa.update_subtree(egui_ctx);
@@ -85,7 +120,7 @@ impl MainState {
             // });
 
             for vsa in &mut self.vsas {
-                vsa.draw(self.vsa_labels, egui_ctx);
+                vsa.draw(self.vsa_labels, self.learn_depth, egui_ctx);
                 // draw_vsa(vsa.vsa.clone(), Vec2::new(100.0, 100.0), &vsa.input, None, egui_ctx);
             }
 
@@ -93,6 +128,15 @@ impl MainState {
                 ui.horizontal(|ui| {
                     let vsa_label_text = egui::RichText::new("VSA Labels").size(18.0);
                     ui.checkbox(&mut self.vsa_labels, vsa_label_text);
+
+                    let tools_text = egui::RichText::new("Tools").size(18.0);
+                    ui.menu_button(tools_text, |ui| {
+                        ui.selectable_value(&mut self.current_tool, Tool::Drag, "Drag");
+                        ui.selectable_value(&mut self.current_tool, Tool::Select, "Select");
+                        ui.selectable_value(&mut self.current_tool, Tool::Prune, "Prune");
+                    });
+
+                    ui.add(egui::widgets::Slider::new(&mut self.learn_depth, 1..=10).text("Learn Depth"));
 
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                         ui.label(
