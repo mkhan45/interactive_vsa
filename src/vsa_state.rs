@@ -78,8 +78,19 @@ impl RichVSA {
                         ui.label("Leaf");
                         ui.label(format!("{} → {}", self.input, self.goal));
                     }
-                    for ast in asts {
-                        ui.label(format!("{}", ast));
+                    let selected_ast = asts.iter().find(|ast| {
+                        ui.horizontal(|ui| {
+                            ui.label(format!("{}", ast));
+                            return ui.button("Select").clicked()
+                        }).inner
+                    });
+                    if let Some(ast) = selected_ast {
+                        let unwrapped_ast = ast.as_ref().clone();
+                        let new_vsa = VSA::singleton(unwrapped_ast);
+                        let self_mut = Rc::as_ptr(&self.vsa) as *mut _;
+                        // Safety: probably
+                        unsafe { std::ptr::write(self_mut, new_vsa) };
+                        self.children.clear();
                     }
                 });
             }
