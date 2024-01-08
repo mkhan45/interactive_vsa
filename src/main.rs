@@ -57,7 +57,7 @@ async fn main() -> Result<(), std::io::Error> {
             unlearned_vsa, 
             Lit::StringConst("First Last".to_string()),
             Lit::StringConst("F L".to_string()),
-            Vec2::new(screen_width(), 100.0),
+            Vec2::new(screen_width() / 2.0, 100.0),
     ));
     let mut main_state = main_state::MainState::new(vsas);
     loop {
