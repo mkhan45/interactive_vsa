@@ -162,7 +162,17 @@ impl RichVSA {
                                     );
                             }
                         let mut regex_bank = crate::synth::bank::Bank::new();
-                        for i in 2..=6 {
+                        for prim in [
+                            Lit::StringConst("\\d".to_string()),
+                            Lit::StringConst("\\b".to_string()),
+                            Lit::StringConst("[a-z]".to_string()),
+                            Lit::StringConst("[A-Z]".to_string()),
+                        ]
+                        .into_iter()
+                        {
+                            regex_bank.size_mut(1).push(AST::Lit(prim.clone()));
+                        }
+                        for i in 1..=6 {
                         crate::synth::bottom_up(
                             std::iter::once(start),
                             i,
