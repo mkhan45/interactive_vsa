@@ -18,7 +18,9 @@ pub struct MainState {
     pub vsa_labels: bool,
     pub current_tool: Tool,
     pub learn_depth: usize,
+    pub search_depth: usize,
     pub messages: Vec<Message>,
+    pub show_help: bool,
 }
 
 pub struct Message {
@@ -26,7 +28,7 @@ pub struct Message {
     pub remaining_frames: usize,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Tool {
     Drag,
     Select,
@@ -46,7 +48,9 @@ impl MainState {
             vsa_labels: false,
             current_tool: Tool::Drag,
             learn_depth: 1,
+            search_depth: 4,
             messages: vec![],
+            show_help: true,
         }
     }
 
@@ -77,6 +81,23 @@ impl MainState {
                 (inp.pointer.primary_down(), inp.pointer.interact_pos())
             });
 
+            let tool_change = egui_ctx.input(|inp| {
+                if inp.key_down(egui::Key::D) {
+                    Some(Tool::Drag)
+                } else if inp.key_down(egui::Key::S) {
+                    Some(Tool::Select)
+                } else if inp.key_down(egui::Key::F) {
+                    Some(Tool::Prune)
+                } else if inp.key_down(egui::Key::E) {
+                    Some(Tool::Extract)
+                } else {
+                    None
+                }
+            });
+            if let Some(tool) = tool_change {
+                self.current_tool = tool;
+            }
+
             if [Tool::Select, Tool::Prune].contains(&self.current_tool) && clicked {
                 let pos = pos_opt.unwrap();
                 let clicked_node = 
@@ -92,10 +113,14 @@ impl MainState {
                                 kill_vsas.push(child.vsa.clone());
                             }
                             parent.children.retain(|c| std::rc::Rc::ptr_eq(&c.vsa, &child));
-                            self.current_tool = Tool::Drag;
                         } else /* if self.current_tool == Tool::Prune */{
                             parent.children.retain(|c| !std::rc::Rc::ptr_eq(&c.vsa, &child));
                             kill_vsas.push(child);
+                        }
+
+                        let ctrl_clicked = egui_ctx.input(|inp| inp.modifiers.command_only());
+                        if !ctrl_clicked {
+                            self.current_tool = Tool::Drag;
                         }
 
                         for vsa in kill_vsas {
@@ -163,7 +188,7 @@ impl MainState {
             // });
 
             for vsa in &mut self.vsas {
-                vsa.draw(self.vsa_labels, self.learn_depth, egui_ctx);
+                vsa.draw(self.vsa_labels, self.learn_depth, self.search_depth, egui_ctx);
                 // draw_vsa(vsa.vsa.clone(), Vec2::new(100.0, 100.0), &vsa.input, None, egui_ctx);
             }
 
@@ -172,7 +197,8 @@ impl MainState {
                     let vsa_label_text = egui::RichText::new("VSA Labels").size(24.0);
                     ui.checkbox(&mut self.vsa_labels, vsa_label_text);
 
-                    let tools_text = egui::RichText::new("Tools").size(24.0);
+                    let tool_str = format!("Current Tool: {:?}", self.current_tool);
+                    let tools_text = egui::RichText::new(tool_str).size(24.0);
                     ui.menu_button(tools_text, |ui| {
                         ui.selectable_value(&mut self.current_tool, Tool::Drag, "Drag");
                         ui.selectable_value(&mut self.current_tool, Tool::Select, "Select");
@@ -181,18 +207,25 @@ impl MainState {
                     });
 
                     ui.add(egui::widgets::Slider::new(&mut self.learn_depth, 1..=10).text("Learn Depth"));
-
-                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        ui.label(
-                            "Hold middle mouse or shift to drag, hold control click to move a whole subtree",
-                        )
-                    });
+                    ui.add(egui::widgets::Slider::new(&mut self.search_depth, 1..=9).text("Search Depth"));
                 });
             });
 
+            egui::Window::new("help")
+                .open(&mut self.show_help)
+                .default_pos(egui::Pos2::new(screen_width() - 410.0, 0.0))
+                .show(egui_ctx, |ui| {
+                    ui.set_max_width(400.0);
+                    ui.label(concat!(
+                    "Middle mouse or shift drag to pan\n",
+                    "Click/hold to drag nodes\n",
+                    "Control/command click to drag a whole subtree"
+                    ));
+                });
+
             for (i, message) in self.messages.iter_mut().enumerate() {
                 let pos = vec2(0.0, 50.0 + 50.0 * i as f32);
-                egui::Window::new("error")
+                egui::Window::new(format!("error{}", i))
                     .fixed_pos(crate::util::vec2pos(pos))
                     .show(egui_ctx, |ui| {
                         ui.label(message.text.clone());

@@ -65,7 +65,7 @@ impl RichVSA {
         style.spacing.window_margin = egui::style::Margin::same(10.0);
     }
 
-    pub fn draw(&mut self, labels: bool, learn_depth: usize, egui_ctx: &Context) {
+    pub fn draw(&mut self, labels: bool, learn_depth: usize, search_depth: usize, egui_ctx: &Context) {
         let learn_pos = self.rect(egui_ctx).map(|r| {
             let egui::Pos2 { x, y } = r.left_top();
             vec2(x, y)
@@ -107,7 +107,7 @@ impl RichVSA {
                 self.drag = edrag.map(|drag| Vec2::new(drag.x, drag.y));
                 let id = self.id();
                 for vsa in &mut self.children {
-                    vsa.draw(labels, learn_depth, egui_ctx);
+                    vsa.draw(labels, learn_depth, search_depth, egui_ctx);
                     draw_area_arrows(id, vsa.id(), egui_ctx);
                 }
             }
@@ -129,7 +129,7 @@ impl RichVSA {
                 self.drag = edrag.map(|drag| Vec2::new(drag.x, drag.y));
                 let id = self.id();
                 for vsa in self.children.iter_mut() {
-                    vsa.draw(labels, learn_depth, egui_ctx);
+                    vsa.draw(labels, learn_depth, search_depth, egui_ctx);
                     draw_area_arrows(id, vsa.id(), egui_ctx);
                 }
             }
@@ -172,7 +172,7 @@ impl RichVSA {
                         {
                             regex_bank.size_mut(1).push(AST::Lit(prim.clone()));
                         }
-                        for i in 1..=6 {
+                        for i in 1..=search_depth {
                         crate::synth::bottom_up(
                             std::iter::once(start),
                             i,
