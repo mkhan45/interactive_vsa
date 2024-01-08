@@ -131,15 +131,37 @@ impl RichVSA {
                         use std::collections::HashMap;
                         let mut all_cache = HashMap::new();
                         let mut bank = crate::synth::bank::Bank::new();
+                        for prim in [
+                            Lit::Input,
+                            Lit::StringConst("".to_string()),
+                            Lit::StringConst(" ".to_string()),
+                            Lit::StringConst(".".to_string()),
+                            Lit::LocConst(0),
+                            Lit::LocConst(1),
+                            Lit::LocEnd,
+                        ]
+                            .into_iter()
+                            {
+                                bank.size_mut(1).push(AST::Lit(prim.clone()));
+                                all_cache.insert(
+                                    std::iter::repeat(prim.clone())
+                                    .take(1)
+                                    .collect(),
+                                    Rc::new(VSA::singleton(AST::Lit(prim.clone()))),
+                                    );
+                            }
                         let mut regex_bank = crate::synth::bank::Bank::new();
+                        for i in 2..=6 {
                         crate::synth::bottom_up(
                             std::iter::once(start),
-                            5,
+                            i,
                             &mut all_cache,
                             &mut bank,
                             &mut regex_bank,
                             false
-                        );
+                            );
+                        }
+                        dbg!(&bank);
                         let mut cache = // idr what this does
                             all_cache.iter().map(|(results, ast)| (results[0].clone(), ast.clone())).collect();
                         let new_vsa_rc = crate::synth::learn_to_depth(start, goal, &mut cache, &bank, learn_depth);
@@ -150,14 +172,14 @@ impl RichVSA {
                         let rich_vsa = 
                             RichVSA::new(
                                 self.vsa.clone(), self.input.clone(), self.goal.clone(), learn_pos.unwrap()
-                            );
+                                );
                         self.children = rich_vsa.children;
                         // TODO: send a signal and learn to depth
                     }
                 });
             }
         }
-     
+
         if let Some(rect) = self.rect(egui_ctx) {
             let painter = egui_ctx.layer_painter(egui::layers::LayerId::new(ARROW_ORDER, self.id()));
             painter.rect_stroke(rect, egui::Rounding::ZERO, egui::Stroke::new(1.0, egui::Color32::BLACK));
@@ -276,14 +298,13 @@ impl RichVSA {
         }
     }
 
-    pub fn find_clicked_node(&self, pos: egui::Pos2, egui_ctx: &Context) -> Option<&RichVSA> {
-        dbg!();
+    pub fn find_clicked_node(&mut self, pos: egui::Pos2, egui_ctx: &Context) -> Option<&mut RichVSA> {
         if let Some(rect) = self.rect(egui_ctx) {
             if rect.contains(egui::Pos2::new(pos.x, pos.y)) {
                 return Some(self);
             }
         }
-        self.children.iter().find_map(|child| child.find_clicked_node(pos, egui_ctx))
+        self.children.iter_mut().find_map(|child| child.find_clicked_node(pos, egui_ctx))
     }
 
     pub fn find_parent_of_vsa(&mut self, vsa: &Rc<VSA<Lit, Fun>>) -> Option<&mut RichVSA> {
