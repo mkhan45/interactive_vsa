@@ -81,7 +81,7 @@ impl RichVSA {
                     let selected_ast = asts.iter().find(|ast| {
                         ui.horizontal(|ui| {
                             ui.label(format!("{}", ast));
-                            return ui.button("Select").clicked()
+                            asts.len() > 1 && ui.button("Select").clicked()
                         }).inner
                     });
                     if let Some(ast) = selected_ast {
