@@ -126,10 +126,10 @@ impl MainState {
 
             egui::TopBottomPanel::top("top bar").show(egui_ctx, |ui| {
                 ui.horizontal(|ui| {
-                    let vsa_label_text = egui::RichText::new("VSA Labels").size(18.0);
+                    let vsa_label_text = egui::RichText::new("VSA Labels").size(24.0);
                     ui.checkbox(&mut self.vsa_labels, vsa_label_text);
 
-                    let tools_text = egui::RichText::new("Tools").size(18.0);
+                    let tools_text = egui::RichText::new("Tools").size(24.0);
                     ui.menu_button(tools_text, |ui| {
                         ui.selectable_value(&mut self.current_tool, Tool::Drag, "Drag");
                         ui.selectable_value(&mut self.current_tool, Tool::Select, "Select");

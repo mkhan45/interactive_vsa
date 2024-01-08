@@ -33,7 +33,7 @@ async fn main() -> Result<(), std::io::Error> {
 
     egui_macroquad::cfg(|egui_ctx| {
         egui_ctx.style_mut(|style| {
-            style.override_font_id = Some(egui::FontId::monospace(18.0));
+            style.override_font_id = Some(egui::FontId::monospace(24.0));
             style.wrap = Some(false);
             style.visuals = egui::style::Visuals::light();
         });
