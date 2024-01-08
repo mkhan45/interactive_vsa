@@ -219,7 +219,11 @@ impl MainState {
                     ui.label(concat!(
                     "Middle mouse or shift drag to pan\n",
                     "Click/hold to drag nodes\n",
-                    "Control/command click to drag a whole subtree"
+                    "Control/command click to drag a whole subtree\n\n",
+                    "D: Drag tool\n",
+                    "S: Select tool\n",
+                    "F: Prune tool\n",
+                    "E: Extract tool",
                     ));
                 });
 
