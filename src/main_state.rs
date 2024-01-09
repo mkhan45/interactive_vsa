@@ -48,7 +48,7 @@ impl MainState {
             vsa_labels: false,
             current_tool: Tool::Drag,
             learn_depth: 1,
-            search_depth: 4,
+            search_depth: 3,
             messages: vec![],
             show_help: true,
         }
@@ -98,6 +98,8 @@ impl MainState {
                 self.current_tool = tool;
             }
 
+            let ctrl_clicked = egui_ctx.input(|inp| inp.modifiers.command_only());
+
             if [Tool::Select, Tool::Prune].contains(&self.current_tool) && clicked {
                 let pos = pos_opt.unwrap();
                 let clicked_node = 
@@ -118,7 +120,6 @@ impl MainState {
                             kill_vsas.push(child);
                         }
 
-                        let ctrl_clicked = egui_ctx.input(|inp| inp.modifiers.command_only());
                         if !ctrl_clicked {
                             self.current_tool = Tool::Drag;
                         }

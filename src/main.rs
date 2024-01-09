@@ -17,13 +17,17 @@ async fn main() -> Result<(), std::io::Error> {
     // use crate::synth::vsa::Lit;
     let examples = vec![
         (
-            Lit::StringConst("First Last".to_string()),
-            Lit::StringConst("F L".to_string()),
+            Lit::StringConst("I have 17 cookies".to_string()),
+            Lit::StringConst("17".to_string()),
         ),
-        (
-            Lit::StringConst("Anopther Name".to_string()),
-            Lit::StringConst("A N".to_string()),
-        ),
+        // (
+        //     Lit::StringConst("Give me at least 3 cookies".to_string()),
+        //     Lit::StringConst("3".to_string()),
+        // ),
+        // (
+        //     Lit::StringConst("This number is 489".to_string()),
+        //     Lit::StringConst("489".to_string()),
+        // ),
     ];
 
     let (vsa, ast) = synth::top_down(&examples);
@@ -50,15 +54,15 @@ async fn main() -> Result<(), std::io::Error> {
     // });
     let unlearned_vsa = Rc::new(VSA::<_, Fun>::Unlearned {
         start: Lit::StringConst("First Last".to_string()),
-        goal: Lit::StringConst("F L".to_string()),
+        goal: Lit::StringConst("F.L.".to_string()),
     });
     let mut vsas = Vec::new();
     vsas.push(RichVSA::new(
             unlearned_vsa, 
             Lit::StringConst("First Last".to_string()),
-            Lit::StringConst("F L".to_string()),
+            Lit::StringConst("F.L.".to_string()),
             Vec2::new(screen_width() / 2.0, 100.0),
-    ));
+    ).editable());
     let mut main_state = main_state::MainState::new(vsas);
     loop {
         next_frame().await;

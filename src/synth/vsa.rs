@@ -392,6 +392,22 @@ where
     },
 }
 
+impl AST<Lit, Fun> {
+    pub fn includes_input(&self) -> bool {
+        match self {
+            AST::Lit(l) => l.is_input(),
+            AST::App { fun: _, args } => args.iter().any(AST::includes_input),
+            AST::JS { code: _, input, typ: _ } => input.includes_input(),
+        }
+    }
+    pub fn is_lit(&self) -> bool {
+        match self {
+            AST::Lit(_) => true,
+            _ => false,
+        }
+    }
+}
+
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub enum Typ {
     Str,

@@ -17,6 +17,7 @@ pub struct RichVSA {
     pub collapsed: bool,
     pub children: Vec<RichVSA>,
     pub drag: Option<Vec2>,
+    pub editable: bool,
 }
 
 impl RichVSA {
@@ -50,6 +51,14 @@ impl RichVSA {
             collapsed: false,
             children,
             drag: None,
+            editable: false,
+        }
+    }
+
+    pub fn editable(self) -> Self {
+        Self {
+            editable: true,
+            ..self
         }
     }
 
@@ -72,13 +81,18 @@ impl RichVSA {
         });
         match self.vsa.as_ref() {
             VSA::Leaf(asts) => {
+                let sorted_asts = {
+                    let mut asts = asts.iter().collect::<Vec<_>>();
+                    asts.sort_by_key(|ast| ast.size());
+                    asts
+                };
                 self.area.show(egui_ctx, |ui| {
                     Self::set_vsa_style(ui);
                     if labels {
                         ui.label("Leaf");
                         ui.label(format!("{} → {}", self.input, self.goal));
                     }
-                    let selected_ast = asts.iter().find(|ast| {
+                    let selected_ast = sorted_asts.iter().find(|ast| {
                         ui.horizontal(|ui| {
                             ui.label(format!("{}", ast));
                             asts.len() > 1 && ui.button("Select").clicked()
@@ -137,11 +151,37 @@ impl RichVSA {
                 self.area.show(egui_ctx, |ui| {
                     Self::set_vsa_style(ui);
                     ui.label("Unlearned");
-                    ui.label(format!("{} → {}", start, goal));
+                    if self.editable {
+                        ui.horizontal(|ui| {
+                            let mut inp_str = match &self.input {
+                                Lit::StringConst(s) => s.clone(),
+                                _ => "".to_string(),
+                            };
+                            let mut goal_str = match &self.goal {
+                                Lit::StringConst(s) => s.clone(),
+                                _ => "".to_string(),
+                            };
+                            ui.text_edit_singleline(&mut inp_str);
+                            ui.label("→");
+                            ui.text_edit_singleline(&mut goal_str);
+                            self.input = Lit::StringConst(inp_str);
+                            self.goal = Lit::StringConst(goal_str);
+                            let new_vsa = VSA::Unlearned { start: self.input.clone(), goal: self.goal.clone() };
+                            let self_mut = Rc::as_ptr(&self.vsa) as *mut VSA<Lit, Fun>;
+                            // Safety: probably
+                            unsafe { std::ptr::write(self_mut, new_vsa) };
+                        });
+                    } else {
+                        ui.label(format!("{} → {}", start, goal));
+                    }
                     if ui.button("Learn").clicked() {
+                        self.editable = false;
+
                         use std::collections::HashMap;
                         let mut all_cache = HashMap::new();
                         let mut bank = crate::synth::bank::Bank::new();
+                        let mut regex_bank = crate::synth::bank::Bank::new();
+
                         for prim in [
                             Lit::Input,
                             Lit::StringConst("".to_string()),
@@ -161,7 +201,7 @@ impl RichVSA {
                                     Rc::new(VSA::singleton(AST::Lit(prim.clone()))),
                                     );
                             }
-                        let mut regex_bank = crate::synth::bank::Bank::new();
+
                         for prim in [
                             Lit::StringConst("\\d".to_string()),
                             Lit::StringConst("\\b".to_string()),
@@ -172,19 +212,22 @@ impl RichVSA {
                         {
                             regex_bank.size_mut(1).push(AST::Lit(prim.clone()));
                         }
+
                         for i in 1..=search_depth {
-                        crate::synth::bottom_up(
-                            std::iter::once(start),
-                            i,
-                            &mut all_cache,
-                            &mut bank,
-                            &mut regex_bank,
-                            false
+                            crate::synth::bottom_up(
+                                std::iter::once(start),
+                                i,
+                                &mut all_cache,
+                                &mut bank,
+                                &mut regex_bank,
+                                false
                             );
                         }
                         dbg!(&bank);
                         let mut cache = // idr what this does
-                            all_cache.iter().map(|(results, ast)| (results[0].clone(), ast.clone())).collect();
+                            all_cache.iter().map(|(results, ast)| {
+                                (results[0].clone(), ast.clone())
+                            }).collect();
                         let new_vsa_rc = crate::synth::learn_to_depth(start, goal, &mut cache, &bank, learn_depth);
                         let new_vsa = Rc::into_inner(new_vsa_rc);
                         let self_mut = Rc::as_ptr(&self.vsa) as *mut _;

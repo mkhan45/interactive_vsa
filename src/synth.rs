@@ -701,6 +701,7 @@ pub fn bottom_up<'a>(
         // loc_adds
         //     .chain(loc_subs)
         re_concats
+            // .chain(loc_adds)
             // .chain(concats)
             .chain(slices)
             .chain(finds)
@@ -715,12 +716,24 @@ pub fn bottom_up<'a>(
 
         // dbg!(adj.size(), size);
         // dbg!(adj.size(), size, bank.len());
-        if let Entry::Vacant(e) = cache.entry(outs) {
-            e.insert(Rc::new(VSA::singleton(adj.clone())));
-            true
-        } else {
-            false
+        match cache.entry(outs) {
+            Entry::Vacant(e) if adj.includes_input() || adj.is_lit() => {
+                e.insert(Rc::new(VSA::singleton(adj.clone())));
+                true
+            }
+            Entry::Occupied(mut e) if adj.includes_input() || adj.is_lit() => {
+                let old = e.get_mut();
+                *old = Rc::new(VSA::unify(old.clone(), Rc::new(VSA::singleton(adj.clone()))));
+                true
+            }
+            _ => false
         }
+        // if let Entry::Vacant(e) = cache.entry(outs) {
+        //     e.insert(Rc::new(VSA::singleton(adj.clone())));
+        //     true
+        // } else {
+        //     false
+        // }
     })
     .collect::<Vec<_>>();
 
