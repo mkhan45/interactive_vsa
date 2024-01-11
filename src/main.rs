@@ -1,13 +1,13 @@
-use egui_macroquad::macroquad;
 use egui_macroquad::egui;
+use egui_macroquad::macroquad;
 use macroquad::prelude::*;
 
-mod synth;
 mod main_state;
-mod vsa_state;
+mod synth;
 mod util;
+mod vsa_state;
 
-use synth::vsa::{VSA, Lit, Fun, AST};
+use synth::vsa::{Fun, Lit, AST, VSA};
 use vsa_state::RichVSA;
 
 use std::rc::Rc;
@@ -57,12 +57,16 @@ async fn main() -> Result<(), std::io::Error> {
         goal: Lit::StringConst("F.L.".to_string()),
     });
     let mut vsas = Vec::new();
-    vsas.push(RichVSA::new(
-            unlearned_vsa, 
+    vsas.push(
+        RichVSA::new(
+            unlearned_vsa,
             Lit::StringConst("First Last".to_string()),
             Lit::StringConst("F.L.".to_string()),
             Vec2::new(screen_width() / 2.0, 100.0),
-    ).editable());
+            Vec::new(),
+        )
+        .editable(),
+    );
     let mut main_state = main_state::MainState::new(vsas);
     loop {
         next_frame().await;

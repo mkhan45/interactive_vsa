@@ -1,6 +1,6 @@
 use crate::synth::vsa::*;
-use egui_macroquad::macroquad::prelude::*;
 use egui_macroquad::egui;
+use egui_macroquad::macroquad::prelude::*;
 
 use crate::vsa_state::*;
 
@@ -63,7 +63,9 @@ impl MainState {
                 // TODO: figure out how to disable when dragging
                 vsa.repel_children(egui_ctx);
 
-                if self.current_tool == Tool::Drag && egui_ctx.input(|inp| inp.modifiers.command_only()) {
+                if self.current_tool == Tool::Drag
+                    && egui_ctx.input(|inp| inp.modifiers.command_only())
+                {
                     vsa.drag_subtrees();
                 }
             }
@@ -77,11 +79,15 @@ impl MainState {
                 }
             });
 
-            let (clicked, pos_opt) = egui_ctx.input(|inp| {
-                (inp.pointer.primary_down(), inp.pointer.interact_pos())
-            });
+            let (clicked, pos_opt) =
+                egui_ctx.input(|inp| (inp.pointer.primary_down(), inp.pointer.interact_pos()));
 
+            let any_focused = egui_ctx.memory(|mem| mem.focus().is_some());
             let tool_change = egui_ctx.input(|inp| {
+                if any_focused {
+                    return None;
+                }
+
                 if inp.key_down(egui::Key::D) {
                     Some(Tool::Drag)
                 } else if inp.key_down(egui::Key::S) {
@@ -102,21 +108,39 @@ impl MainState {
 
             if [Tool::Select, Tool::Prune].contains(&self.current_tool) && clicked {
                 let pos = pos_opt.unwrap();
-                let clicked_node = 
-                    self.vsas.iter_mut().find_map(|vsa| vsa.find_clicked_node(pos, egui_ctx)).map(|n| n.vsa.clone());
-                let parent = clicked_node.clone().map(|child| {
-                    self.vsas.iter_mut().find_map(|vsa| vsa.find_parent_of_vsa(&child))
-                }).flatten();
+                let clicked_node = self
+                    .vsas
+                    .iter_mut()
+                    .find_map(|vsa| vsa.find_clicked_node(pos, egui_ctx))
+                    .map(|n| n.vsa.clone());
+                let parent = clicked_node
+                    .clone()
+                    .map(|child| {
+                        self.vsas
+                            .iter_mut()
+                            .find_map(|vsa| vsa.find_parent_of_vsa(&child))
+                    })
+                    .flatten();
                 if let Some((parent, child)) = parent.zip(clicked_node) {
                     if matches!(parent.vsa.as_ref(), VSA::Union(_)) {
                         let mut kill_vsas = vec![];
                         if self.current_tool == Tool::Select {
-                            for child in parent.children.iter().filter(|c| !std::rc::Rc::ptr_eq(&c.vsa, &child)) {
+                            for child in parent
+                                .children
+                                .iter()
+                                .filter(|c| !std::rc::Rc::ptr_eq(&c.vsa, &child))
+                            {
                                 kill_vsas.push(child.vsa.clone());
                             }
-                            parent.children.retain(|c| std::rc::Rc::ptr_eq(&c.vsa, &child));
-                        } else /* if self.current_tool == Tool::Prune */{
-                            parent.children.retain(|c| !std::rc::Rc::ptr_eq(&c.vsa, &child));
+                            parent
+                                .children
+                                .retain(|c| std::rc::Rc::ptr_eq(&c.vsa, &child));
+                        } else
+                        /* if self.current_tool == Tool::Prune */
+                        {
+                            parent
+                                .children
+                                .retain(|c| !std::rc::Rc::ptr_eq(&c.vsa, &child));
                             kill_vsas.push(child);
                         }
 
@@ -128,7 +152,9 @@ impl MainState {
                             let new_vsa = VSA::empty();
                             let vsa_rc_mut = std::rc::Rc::as_ptr(&vsa) as *mut VSA<Lit, Fun>;
                             // safety: probably
-                            unsafe { std::ptr::write(vsa_rc_mut, new_vsa); }
+                            unsafe {
+                                std::ptr::write(vsa_rc_mut, new_vsa);
+                            }
                         }
                     }
                 }
@@ -136,20 +162,27 @@ impl MainState {
 
             if self.current_tool == Tool::Extract && clicked {
                 let pos = pos_opt.unwrap();
-                let clicked_node = 
-                    self.vsas.iter_mut().find_map(|vsa| vsa.find_clicked_node(pos, egui_ctx));
+                let clicked_node = self
+                    .vsas
+                    .iter_mut()
+                    .find_map(|vsa| vsa.find_clicked_node(pos, egui_ctx));
                 if let Some(clicked_node) = clicked_node {
                     let ast = clicked_node.vsa.pick_best(|ast| ast.cost());
                     if let Some(ast) = ast {
                         let new_vsa = VSA::singleton(ast);
-                        let vsa_rc_mut = std::rc::Rc::as_ptr(&clicked_node.vsa) as *mut VSA<Lit, Fun>;
+                        let vsa_rc_mut =
+                            std::rc::Rc::as_ptr(&clicked_node.vsa) as *mut VSA<Lit, Fun>;
                         // safety: probably
-                        unsafe { std::ptr::write(vsa_rc_mut, new_vsa); }
+                        unsafe {
+                            std::ptr::write(vsa_rc_mut, new_vsa);
+                        }
                         clicked_node.children.clear();
                         self.current_tool = Tool::Drag;
                     } else {
                         self.messages.push(Message {
-                            text: egui::RichText::new("No AST could be extracted").size(24.0).color(egui::Color32::RED),
+                            text: egui::RichText::new("No AST could be extracted")
+                                .size(24.0)
+                                .color(egui::Color32::RED),
                             remaining_frames: 600,
                         });
                         self.current_tool = Tool::Drag;
@@ -189,7 +222,12 @@ impl MainState {
             // });
 
             for vsa in &mut self.vsas {
-                vsa.draw(self.vsa_labels, self.learn_depth, self.search_depth, egui_ctx);
+                vsa.draw(
+                    self.vsa_labels,
+                    self.learn_depth,
+                    self.search_depth,
+                    egui_ctx,
+                );
                 // draw_vsa(vsa.vsa.clone(), Vec2::new(100.0, 100.0), &vsa.input, None, egui_ctx);
             }
 
@@ -207,8 +245,14 @@ impl MainState {
                         ui.selectable_value(&mut self.current_tool, Tool::Extract, "Extract");
                     });
 
-                    ui.add(egui::widgets::Slider::new(&mut self.learn_depth, 1..=10).text("Learn Depth"));
-                    ui.add(egui::widgets::Slider::new(&mut self.search_depth, 1..=9).text("Search Depth"));
+                    ui.add(
+                        egui::widgets::Slider::new(&mut self.learn_depth, 1..=10)
+                            .text("Learn Depth"),
+                    );
+                    ui.add(
+                        egui::widgets::Slider::new(&mut self.search_depth, 1..=9)
+                            .text("Search Depth"),
+                    );
                 });
             });
 
@@ -218,13 +262,13 @@ impl MainState {
                 .show(egui_ctx, |ui| {
                     ui.set_max_width(400.0);
                     ui.label(concat!(
-                    "Middle mouse or shift drag to pan\n",
-                    "Click/hold to drag nodes\n",
-                    "Control/command click to drag a whole subtree\n\n",
-                    "D: Drag tool\n",
-                    "S: Select tool\n",
-                    "F: Prune tool\n",
-                    "E: Extract tool",
+                        "Middle mouse or shift drag to pan\n",
+                        "Click/hold to drag nodes\n",
+                        "Control/command click to drag a whole subtree\n\n",
+                        "D: Drag tool\n",
+                        "S: Select tool\n",
+                        "F: Prune tool\n",
+                        "E: Extract tool",
                     ));
                 });
 

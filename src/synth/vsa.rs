@@ -13,13 +13,20 @@ where
 {
     Leaf(HashSet<Rc<AST<L, F>>>),
     Union(Vec<Rc<VSA<L, F>>>),
-    Join { op: F, children: Vec<Rc<VSA<L, F>>>, children_goals: Vec<L> },
-    Unlearned { start: L, goal: L },
+    Join {
+        op: F,
+        children: Vec<Rc<VSA<L, F>>>,
+        children_goals: Vec<L>,
+    },
+    Unlearned {
+        start: L,
+        goal: L,
+    },
 }
 
 impl<L, F> Default for VSA<L, F>
 where
-    L: std::hash::Hash + Eq + Clone + std::fmt::Debug + InputLit, 
+    L: std::hash::Hash + Eq + Clone + std::fmt::Debug + InputLit,
     F: Language<L> + std::hash::Hash + std::fmt::Debug + Eq,
 {
     fn default() -> Self {
@@ -129,7 +136,14 @@ where
             (VSA::Unlearned { .. }, _) | (_, VSA::Unlearned { .. }) => {
                 // TODO: potentially build an intersection with unlearned
                 // so we know that it's worth learning
-                VSA::empty()
+                //
+                // We can intersect with unlearned
+                // 1. when we know the start/goal of the other node
+                // 2. if both are unlearned w/ the same input
+                // 3. if the other node is a leaf we can filter the asts for those that fit the
+                //    unlearned
+                // VSA::empty()
+                self.clone()
             }
         }
     }
@@ -294,12 +308,20 @@ where
                 flattened.dedup();
                 Rc::new(VSA::Union(flattened))
             }
-            VSA::Join { op, children, children_goals } => {
+            VSA::Join {
+                op,
+                children,
+                children_goals,
+            } => {
                 let children = children
                     .iter()
                     .map(|vsa| VSA::flatten(vsa.clone()))
                     .collect();
-                Rc::new(VSA::Join { op: *op, children, children_goals: children_goals.clone() })
+                Rc::new(VSA::Join {
+                    op: *op,
+                    children,
+                    children_goals: children_goals.clone(),
+                })
             }
             VSA::Unlearned { .. } => vsa,
         }
@@ -397,7 +419,11 @@ impl AST<Lit, Fun> {
         match self {
             AST::Lit(l) => l.is_input(),
             AST::App { fun: _, args } => args.iter().any(AST::includes_input),
-            AST::JS { code: _, input, typ: _ } => input.includes_input(),
+            AST::JS {
+                code: _,
+                input,
+                typ: _,
+            } => input.includes_input(),
         }
     }
     pub fn is_lit(&self) -> bool {
@@ -419,7 +445,8 @@ impl Language<Lit> for Fun {
     fn eval(&self, args: &[Lit], input: &Lit) -> Lit {
         match self {
             Fun::Concat => match args {
-                [Lit::StringConst(lhs), Lit::StringConst(rhs)] => { Lit::StringConst(format!("{}{}", lhs, rhs))
+                [Lit::StringConst(lhs), Lit::StringConst(rhs)] => {
+                    Lit::StringConst(format!("{}{}", lhs, rhs))
                 }
                 _ => panic!(),
             },

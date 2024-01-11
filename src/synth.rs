@@ -364,7 +364,13 @@ fn learn(inp: &Lit, out: &Lit, cache: &mut HashMap<Lit, Rc<VSA>>, bank: &Bank<AS
     res
 }
 
-pub fn learn_to_depth(inp: &Lit, out: &Lit, cache: &mut HashMap<Lit, Rc<VSA>>, bank: &Bank<AST>, depth: usize) -> Rc<VSA> {
+pub fn learn_to_depth(
+    inp: &Lit,
+    out: &Lit,
+    cache: &mut HashMap<Lit, Rc<VSA>>,
+    bank: &Bank<AST>,
+    depth: usize,
+) -> Rc<VSA> {
     // dbg!();
     let mut unifier = Vec::new();
     if let Some(res) = cache.get(out) {
@@ -373,7 +379,10 @@ pub fn learn_to_depth(inp: &Lit, out: &Lit, cache: &mut HashMap<Lit, Rc<VSA>>, b
     }
 
     if depth == 0 {
-        return Rc::new(VSA::Unlearned { start: inp.clone(), goal: out.clone() });
+        return Rc::new(VSA::Unlearned {
+            start: inp.clone(),
+            goal: out.clone(),
+        });
     }
 
     macro_rules! universal_witness {
@@ -644,6 +653,26 @@ pub fn bottom_up<'a>(
             })
         });
 
+        // let finds = (1..size - 1).flat_map(|i| {
+        //     let rhs_size = i;
+        //     let index_size = size - 1 - i;
+        //     iproduct!(
+        //         strings_of_size(rhs_size),
+        //         locs_of_size(index_size)
+        //     ).flat_map(|(rhs, index)| {
+        //         [
+        //             AST::App {
+        //                 fun: Fun::Find,
+        //                 args: vec![AST::Lit(Lit::Input), rhs.clone(), index.clone()],
+        //             },
+        //             AST::App {
+        //                 fun: Fun::FindEnd,
+        //                 args: vec![AST::Lit(Lit::Input), rhs.clone(), index.clone()],
+        //             },
+        //         ]
+        //     })
+        // });
+
         let finds = (1..size - 1).flat_map(|l| {
             (l + 1..size).flat_map(move |r| {
                 let lhs_size = l;
@@ -712,21 +741,38 @@ pub fn bottom_up<'a>(
         let outs = inps.clone().map(|inp| adj.eval(inp)).collect::<Vec<_>>();
         use std::collections::hash_map::Entry;
 
-        // TODO: make it add alternatives to a union VSA
+        // First Last, Another Name
+        // it was just a coincidence the last name has a in pos 2 :::
+        match adj {
+            AST::App { fun: Fun::Find | Fun::FindEnd, args } => {
+                match args.as_slice() {
+                    [AST::Lit(Lit::Input), AST::Lit(Lit::StringConst(s)), AST::Lit(Lit::LocConst(n))] => {
+                        if s == "[A-Z]" {
+                            dbg!(adj, &outs, cache.get(&outs));
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            _ => {}
+        }
 
         // dbg!(adj.size(), size);
         // dbg!(adj.size(), size, bank.len());
         match cache.entry(outs) {
-            Entry::Vacant(e) if adj.includes_input() || adj.is_lit() => {
+            Entry::Vacant(e) => {
                 e.insert(Rc::new(VSA::singleton(adj.clone())));
                 true
             }
-            Entry::Occupied(mut e) if adj.includes_input() || adj.is_lit() => {
+            Entry::Occupied(mut e) => {
                 let old = e.get_mut();
-                *old = Rc::new(VSA::unify(old.clone(), Rc::new(VSA::singleton(adj.clone()))));
-                true
+                *old = Rc::new(VSA::unify(
+                    old.clone(),
+                    Rc::new(VSA::singleton(adj.clone())),
+                ));
+                false
             }
-            _ => false
+            // _ => false,
         }
         // if let Entry::Vacant(e) = cache.entry(outs) {
         //     e.insert(Rc::new(VSA::singleton(adj.clone())));

@@ -1,6 +1,6 @@
 use crate::synth::vsa::*;
+use egui_macroquad::egui::{self, Area, Context, Id, InnerResponse, Rect};
 use egui_macroquad::macroquad::prelude::*;
-use egui_macroquad::egui::{self, Id, Context, Area, Rect, InnerResponse};
 
 use crate::util::{rc_to_id, vec2pos};
 
@@ -11,6 +11,7 @@ const ARROW_ORDER: egui::layers::Order = egui::layers::Order::Middle;
 pub struct RichVSA {
     pub vsa: Rc<VSA<Lit, Fun>>,
     pub input: Lit,
+    pub other_inputs: Vec<(Lit, Option<Lit>)>,
     pub goal: Lit,
     pub area: egui::Area,
     pub last_move: Vec2,
@@ -21,22 +22,51 @@ pub struct RichVSA {
 }
 
 impl RichVSA {
-    pub fn new(vsa: Rc<VSA<Lit, Fun>>, input: Lit, goal: Lit, pos: Vec2) -> Self {
-        let y_offs = 120.0;
+    pub fn new(
+        vsa: Rc<VSA<Lit, Fun>>,
+        input: Lit,
+        goal: Lit,
+        pos: Vec2,
+        other_inps: Vec<(Lit, Option<Lit>)>,
+    ) -> Self {
         let x_offs = 100.0;
+        let y_offs = 120.0 + 30.0 * other_inps.len() as f32;
+
         let children = match vsa.as_ref() {
             VSA::Leaf(_) | VSA::Unlearned { .. } => Vec::new(),
             VSA::Union(vsas) => {
-                vsas.into_iter().enumerate().map(|(i, vsa)| {
-                    // TODO: choose good pos
-                    RichVSA::new(vsa.clone(), input.clone(), goal.clone(), pos + Vec2::new(x_offs * i as f32, y_offs))
-                }).collect()
+                vsas.into_iter()
+                    .enumerate()
+                    .map(|(i, vsa)| {
+                        // TODO: choose good pos
+                        RichVSA::new(
+                            vsa.clone(),
+                            input.clone(),
+                            goal.clone(),
+                            pos + Vec2::new(x_offs * i as f32, y_offs),
+                            other_inps.clone(),
+                        )
+                    })
+                    .collect()
             }
-            VSA::Join { children, children_goals, .. } => {
-                children.iter().zip(children_goals.iter()).enumerate().map(|(i, (vsa, goal))| {
-                    RichVSA::new(vsa.clone(), input.clone(), goal.clone(), pos + Vec2::new(x_offs * i as f32, y_offs))
-                }).collect()
-            }
+            VSA::Join {
+                children,
+                children_goals,
+                ..
+            } => children
+                .iter()
+                .zip(children_goals.iter())
+                .enumerate()
+                .map(|(i, (vsa, goal))| {
+                    RichVSA::new(
+                        vsa.clone(),
+                        input.clone(),
+                        goal.clone(),
+                        pos + Vec2::new(x_offs * i as f32, y_offs),
+                        other_inps.clone(),
+                    )
+                })
+                .collect(),
         };
 
         let id = rc_to_id(vsa.clone());
@@ -45,6 +75,7 @@ impl RichVSA {
         Self {
             vsa,
             input,
+            other_inputs: other_inps,
             goal,
             area,
             last_move: Vec2::ZERO,
@@ -74,7 +105,13 @@ impl RichVSA {
         style.spacing.window_margin = egui::style::Margin::same(10.0);
     }
 
-    pub fn draw(&mut self, labels: bool, learn_depth: usize, search_depth: usize, egui_ctx: &Context) {
+    pub fn draw(
+        &mut self,
+        labels: bool,
+        learn_depth: usize,
+        search_depth: usize,
+        egui_ctx: &Context,
+    ) {
         let learn_pos = self.rect(egui_ctx).map(|r| {
             let egui::Pos2 { x, y } = r.left_top();
             vec2(x, y)
@@ -96,7 +133,8 @@ impl RichVSA {
                         ui.horizontal(|ui| {
                             ui.label(format!("{}", ast));
                             asts.len() > 1 && ui.button("Select").clicked()
-                        }).inner
+                        })
+                        .inner
                     });
                     if let Some(ast) = selected_ast {
                         let unwrapped_ast = ast.as_ref().clone();
@@ -115,9 +153,11 @@ impl RichVSA {
                         ui.label("Union");
                     }
                     ui.label(format!("{} → {}", self.input, self.goal));
+                    Self::draw_other_inps(&mut self.other_inputs, ui);
                 });
-                let edrag = 
-                    response.dragged_by(egui::PointerButton::Primary).then(|| response.drag_delta());
+                let edrag = response
+                    .dragged_by(egui::PointerButton::Primary)
+                    .then(|| response.drag_delta());
                 self.drag = edrag.map(|drag| Vec2::new(drag.x, drag.y));
                 let id = self.id();
                 for vsa in &mut self.children {
@@ -125,7 +165,9 @@ impl RichVSA {
                     draw_area_arrows(id, vsa.id(), egui_ctx);
                 }
             }
-            VSA::Join { op, children_goals, .. } => {
+            VSA::Join {
+                op, children_goals, ..
+            } => {
                 let InnerResponse { response, .. } = self.area.show(egui_ctx, |ui| {
                     Self::set_vsa_style(ui);
                     if labels {
@@ -133,13 +175,17 @@ impl RichVSA {
                         ui.label(format!("{} → {}", self.input, self.goal));
                     }
 
-                    let args = children_goals.iter().map(|goal| {
-                        format!("{}", goal)
-                    }).collect::<Vec<_>>().join(", ");
+                    let args = children_goals
+                        .iter()
+                        .map(|goal| format!("{}", goal))
+                        .collect::<Vec<_>>()
+                        .join(", ");
                     ui.label(format!("{:?}({})", op, args));
+                    // Self::draw_other_inps(&mut self.other_inputs, ui);
                 });
-                let edrag = 
-                    response.dragged_by(egui::PointerButton::Primary).then(|| response.drag_delta());
+                let edrag = response
+                    .dragged_by(egui::PointerButton::Primary)
+                    .then(|| response.drag_delta());
                 self.drag = edrag.map(|drag| Vec2::new(drag.x, drag.y));
                 let id = self.id();
                 for vsa in self.children.iter_mut() {
@@ -166,7 +212,10 @@ impl RichVSA {
                             ui.text_edit_singleline(&mut goal_str);
                             self.input = Lit::StringConst(inp_str);
                             self.goal = Lit::StringConst(goal_str);
-                            let new_vsa = VSA::Unlearned { start: self.input.clone(), goal: self.goal.clone() };
+                            let new_vsa = VSA::Unlearned {
+                                start: self.input.clone(),
+                                goal: self.goal.clone(),
+                            };
                             let self_mut = Rc::as_ptr(&self.vsa) as *mut VSA<Lit, Fun>;
                             // Safety: probably
                             unsafe { std::ptr::write(self_mut, new_vsa) };
@@ -174,13 +223,33 @@ impl RichVSA {
                     } else {
                         ui.label(format!("{} → {}", start, goal));
                     }
+                    Self::draw_other_inps(&mut self.other_inputs, ui);
                     if ui.button("Learn").clicked() {
                         self.editable = false;
+
+                        let chars = {
+                            let start_chars = if let Lit::StringConst(s) = &start {
+                                s.chars()
+                            } else {
+                                "".chars()
+                            };
+                            let goal_chars = if let Lit::StringConst(s) = &goal {
+                                s.chars()
+                            } else {
+                                "".chars()
+                            };
+                            start_chars
+                                .chain(goal_chars)
+                                .map(|c| Lit::StringConst(c.to_string()))
+                                .collect::<Vec<_>>()
+                        };
 
                         use std::collections::HashMap;
                         let mut all_cache = HashMap::new();
                         let mut bank = crate::synth::bank::Bank::new();
                         let mut regex_bank = crate::synth::bank::Bank::new();
+
+                        let num_examples = 1 + self.other_inputs.len();
 
                         for prim in [
                             Lit::Input,
@@ -191,16 +260,15 @@ impl RichVSA {
                             Lit::LocConst(1),
                             Lit::LocEnd,
                         ]
-                            .into_iter()
-                            {
-                                bank.size_mut(1).push(AST::Lit(prim.clone()));
-                                all_cache.insert(
-                                    std::iter::repeat(prim.clone())
-                                    .take(1)
-                                    .collect(),
-                                    Rc::new(VSA::singleton(AST::Lit(prim.clone()))),
-                                    );
-                            }
+                        .into_iter()
+                        // .chain(chars.clone().into_iter())
+                        {
+                            bank.size_mut(1).push(AST::Lit(prim.clone()));
+                            all_cache.insert(
+                                std::iter::repeat(prim.clone()).take(num_examples).collect(),
+                                Rc::new(VSA::singleton(AST::Lit(prim.clone()))),
+                            );
+                        }
 
                         for prim in [
                             Lit::StringConst("\\d".to_string()),
@@ -209,34 +277,77 @@ impl RichVSA {
                             Lit::StringConst("[A-Z]".to_string()),
                         ]
                         .into_iter()
+                        // .chain(chars.into_iter())
                         {
                             regex_bank.size_mut(1).push(AST::Lit(prim.clone()));
                         }
 
+                        let bottom_up_inps = std::iter::once(start.clone())
+                            .chain(self.other_inputs.iter().map(|(inp, _)| inp.clone()))
+                            .collect::<Vec<_>>();
                         for i in 1..=search_depth {
                             crate::synth::bottom_up(
-                                std::iter::once(start),
+                                bottom_up_inps.iter(),
+                                // std::iter::once(&start.clone()),
                                 i,
                                 &mut all_cache,
                                 &mut bank,
                                 &mut regex_bank,
-                                false
+                                false,
                             );
                         }
-                        dbg!(&bank);
-                        let mut cache = // idr what this does
-                            all_cache.iter().map(|(results, ast)| {
-                                (results[0].clone(), ast.clone())
-                            }).collect();
-                        let new_vsa_rc = crate::synth::learn_to_depth(start, goal, &mut cache, &bank, learn_depth);
-                        let new_vsa = Rc::into_inner(new_vsa_rc);
+                        // dbg!(&bank);
+
+                        let complete_other_inps = self.other_inputs.iter().enumerate().filter_map(|(i, (inp, out))| {
+                            out.clone().map(|out| (i+1, (inp.clone(), out)))
+                        });
+
+                        let complete_examples = std::iter::once((0, (start.clone(), goal.clone())))
+                            .chain(complete_other_inps)
+                            .collect::<Vec<_>>(); 
+
+                        let mut ex_vsas = complete_examples.iter().map(|(i, (inp, out))| {
+                            let mut cache: HashMap<Lit, Rc<VSA<Lit, Fun>>> = HashMap::new();
+                            for (outs, vsa) in all_cache.iter() {
+                                if let Some(v) = cache.get_mut(&outs[*i]) {
+                                    *v = Rc::new(VSA::unify(vsa.clone(), v.clone()));
+                                } else {
+                                    cache.insert(outs[*i].clone(), vsa.clone());
+                                }
+                            }
+
+                            crate::synth::learn_to_depth(
+                                inp, 
+                                out, 
+                                &mut cache, 
+                                &bank,
+                                learn_depth,
+                            )
+                        });
+
+                        let mut res = ex_vsas.next().unwrap();
+
+                        for vsa in ex_vsas {
+                            if let Some(prog) = res.pick_best(|ast| ast.cost()) {
+                                if complete_examples.iter().all(|(_, (inp, out))| prog.eval(inp) == *out) {
+                                    break;
+                                };
+                            }
+
+                            res = Rc::new(res.intersect(vsa.as_ref()));
+                        }
+
+                        let new_vsa = Rc::into_inner(res);
                         let self_mut = Rc::as_ptr(&self.vsa) as *mut _;
                         // Safety: probably
                         unsafe { std::ptr::write(self_mut, new_vsa) };
-                        let rich_vsa = 
-                            RichVSA::new(
-                                self.vsa.clone(), self.input.clone(), self.goal.clone(), learn_pos.unwrap()
-                                );
+                        let rich_vsa = RichVSA::new(
+                            self.vsa.clone(),
+                            self.input.clone(),
+                            self.goal.clone(),
+                            learn_pos.unwrap(),
+                            self.other_inputs.iter().map(|(inp, _)| (inp.clone(), None)).collect(),
+                            );
                         self.children = rich_vsa.children;
                         // TODO: send a signal and learn to depth
                     }
@@ -245,8 +356,13 @@ impl RichVSA {
         }
 
         if let Some(rect) = self.rect(egui_ctx) {
-            let painter = egui_ctx.layer_painter(egui::layers::LayerId::new(ARROW_ORDER, self.id()));
-            painter.rect_stroke(rect, egui::Rounding::ZERO, egui::Stroke::new(1.0, egui::Color32::BLACK));
+            let painter =
+                egui_ctx.layer_painter(egui::layers::LayerId::new(ARROW_ORDER, self.id()));
+            painter.rect_stroke(
+                rect,
+                egui::Rounding::ZERO,
+                egui::Stroke::new(1.0, egui::Color32::BLACK),
+                );
         }
 
         // if let Some(rect) = self.subtree_rect(egui_ctx) {
@@ -256,16 +372,17 @@ impl RichVSA {
     }
 
     pub fn rect(&self, egui_ctx: &Context) -> Option<Rect> {
-        egui_ctx.memory(|mem| {
-            mem.area_rect(self.id()).map(|r| r.expand(10.0))
-        })
+        egui_ctx.memory(|mem| mem.area_rect(self.id()).map(|r| r.expand(10.0)))
     }
 
     pub fn subtree_rect(&self, egui_ctx: &Context) -> Option<Rect> {
-        self.children.iter().fold(self.rect(egui_ctx), |rect, child| {
-            let child_rect = child.subtree_rect(egui_ctx);
-            rect.zip(child_rect).map(|(rect, child_rect)| rect.union(child_rect))
-        })
+        self.children
+            .iter()
+            .fold(self.rect(egui_ctx), |rect, child| {
+                let child_rect = child.subtree_rect(egui_ctx);
+                rect.zip(child_rect)
+                    .map(|(rect, child_rect)| rect.union(child_rect))
+            })
     }
 
     pub fn updated_rect(&self, egui_ctx: &Context) -> Option<Rect> {
@@ -276,10 +393,13 @@ impl RichVSA {
     }
 
     pub fn updated_subtree_rect(&self, egui_ctx: &Context) -> Option<Rect> {
-        self.children.iter().fold(self.updated_rect(egui_ctx), |rect, child| {
-            let child_rect = child.updated_subtree_rect(egui_ctx);
-            rect.zip(child_rect).map(|(rect, child_rect)| rect.union(child_rect))
-        })
+        self.children
+            .iter()
+            .fold(self.updated_rect(egui_ctx), |rect, child| {
+                let child_rect = child.updated_subtree_rect(egui_ctx);
+                rect.zip(child_rect)
+                    .map(|(rect, child_rect)| rect.union(child_rect))
+            })
     }
 
     pub fn drag_subtrees(&mut self) {
@@ -296,7 +416,11 @@ impl RichVSA {
     }
 
     pub fn any_children_dragged(&self) -> bool {
-        self.drag.is_some() || self.children.iter().any(|child| child.any_children_dragged())
+        self.drag.is_some()
+            || self
+            .children
+            .iter()
+            .any(|child| child.any_children_dragged())
     }
 
     pub fn repel_children(&mut self, egui_ctx: &Context) {
@@ -355,30 +479,82 @@ impl RichVSA {
     pub fn update_subtree(&mut self, egui_ctx: &Context) {
         if let Some(updated_rect) = self.updated_rect(egui_ctx) {
             let updated_pos = updated_rect.left_top();
-            self.area = self.area.current_pos(egui::Pos2::new(updated_pos.x, updated_pos.y));
+            self.area = self
+                .area
+                .current_pos(egui::Pos2::new(updated_pos.x, updated_pos.y));
             for child in &mut self.children {
                 child.update_subtree(egui_ctx);
             }
         }
     }
 
-    pub fn find_clicked_node(&mut self, pos: egui::Pos2, egui_ctx: &Context) -> Option<&mut RichVSA> {
+    pub fn find_clicked_node(
+        &mut self,
+        pos: egui::Pos2,
+        egui_ctx: &Context,
+        ) -> Option<&mut RichVSA> {
         if let Some(rect) = self.rect(egui_ctx) {
             if rect.contains(egui::Pos2::new(pos.x, pos.y)) {
                 return Some(self);
             }
         }
-        self.children.iter_mut().find_map(|child| child.find_clicked_node(pos, egui_ctx))
+        self.children
+            .iter_mut()
+            .find_map(|child| child.find_clicked_node(pos, egui_ctx))
     }
 
     pub fn find_parent_of_vsa(&mut self, vsa: &Rc<VSA<Lit, Fun>>) -> Option<&mut RichVSA> {
         if Rc::ptr_eq(&self.vsa, vsa) {
-            return None
-        } else if self.children.iter().any(|child| Rc::ptr_eq(&child.vsa, vsa)) {
-            return Some(self)
+            return None;
+        } else if self
+            .children
+                .iter()
+                .any(|child| Rc::ptr_eq(&child.vsa, vsa))
+                {
+                    return Some(self);
+                }
+
+        self.children
+            .iter_mut()
+            .find_map(|child| child.find_parent_of_vsa(vsa))
+    }
+
+    pub fn draw_other_inps(other_inps: &mut Vec<(Lit, Option<Lit>)>, ui: &mut egui::Ui) {
+        let mut kill_inps = std::collections::HashSet::new();
+        for (other_inp, other_out) in other_inps.iter_mut() {
+            let mut other_inp_str = match other_inp {
+                Lit::StringConst(s) => s.clone(),
+                _ => todo!(),
+            };
+            ui.horizontal(|ui| {
+                ui.text_edit_singleline(&mut other_inp_str);
+                ui.label("→");
+                if let Some(Lit::StringConst(other_out_str)) = other_out {
+                    ui.text_edit_singleline(other_out_str);
+                    if ui.button("X").clicked() {
+                        *other_out = None;
+                    }
+                } else {
+                    if ui.button("Add Output").clicked() {
+                        *other_out = Some(Lit::StringConst("".to_string()));
+                    }
+                    if ui.button("X").clicked() {
+                        kill_inps.insert(other_inp.clone());
+                    }
+                }
+
+                *other_inp = Lit::StringConst(other_inp_str);
+            });
         }
 
-        self.children.iter_mut().find_map(|child| child.find_parent_of_vsa(vsa))
+        other_inps.retain(|(inp, _)| match inp {
+            Lit::StringConst(s) => !kill_inps.contains(&Lit::StringConst(s.clone())),
+            _ => todo!(),
+        });
+
+        if ui.button("Add Example").clicked() {
+            other_inps.push((Lit::StringConst("".to_string()), None));
+        }
     }
 }
 
@@ -395,7 +571,10 @@ fn draw_area_arrows(start_id: Id, end_id: Id, egui_ctx: &Context) {
         let start_rect = mem.area_rect(start_id);
         let end_rect = mem.area_rect(end_id);
         start_rect.zip(end_rect).map(|(start_rect, end_rect)| {
-            (start_rect.expand(10.0).center_bottom(), end_rect.expand(10.0).center_top())
+            (
+                start_rect.expand(10.0).center_bottom(),
+                end_rect.expand(10.0).center_top(),
+                )
         })
     });
 
