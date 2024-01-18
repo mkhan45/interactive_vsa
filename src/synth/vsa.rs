@@ -82,7 +82,7 @@ where
         }
     }
 
-    fn contains(&self, program: &AST<L, F>) -> bool {
+    pub fn contains(&self, program: &AST<L, F>) -> bool {
         match self {
             VSA::Leaf(s) => s.contains(program),
             VSA::Union(vss) => vss.iter().any(|vs| vs.contains(program)),
