@@ -142,8 +142,12 @@ where
                 // 2. if both are unlearned w/ the same input
                 // 3. if the other node is a leaf we can filter the asts for those that fit the
                 //    unlearned
+                //    TODO
                 // VSA::empty()
-                self.clone()
+                // self.clone()
+                Rc::into_inner(
+                    VSA::flatten(Rc::new(VSA::Union(vec![self.clone(), other.clone()].into_iter().map(Rc::new).collect())))
+                ).unwrap()
             }
         }
     }

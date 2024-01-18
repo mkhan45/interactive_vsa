@@ -34,6 +34,8 @@ pub enum Tool {
     Select,
     Prune,
     Extract,
+    #[cfg(target_arch = "x86_64")]
+    Debug,
 }
 
 impl MainState {
@@ -190,6 +192,18 @@ impl MainState {
                 }
             }
 
+            #[cfg(target_arch = "x86_64")]
+            if self.current_tool == Tool::Debug && clicked {
+                let pos = pos_opt.unwrap();
+                let clicked_node = self
+                    .vsas
+                    .iter_mut()
+                    .find_map(|vsa| vsa.find_clicked_node(pos, egui_ctx));
+                if let Some(clicked_node) = clicked_node {
+                    dbg!(&clicked_node.vsa);
+                }
+            }
+
             for vsa in &mut self.vsas {
                 vsa.update_subtree(egui_ctx);
             }
@@ -243,6 +257,8 @@ impl MainState {
                         ui.selectable_value(&mut self.current_tool, Tool::Select, "Select");
                         ui.selectable_value(&mut self.current_tool, Tool::Prune, "Prune");
                         ui.selectable_value(&mut self.current_tool, Tool::Extract, "Extract");
+                        #[cfg(target_arch = "x86_64")]
+                        ui.selectable_value(&mut self.current_tool, Tool::Debug, "Debug");
                     });
 
                     ui.add(

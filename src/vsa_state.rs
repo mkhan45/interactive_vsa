@@ -8,6 +8,7 @@ use std::rc::Rc;
 
 const ARROW_ORDER: egui::layers::Order = egui::layers::Order::Middle;
 
+#[derive(Clone, Debug)]
 pub struct RichVSA {
     pub vsa: Rc<VSA<Lit, Fun>>,
     pub input: Lit,
@@ -29,7 +30,7 @@ impl RichVSA {
         pos: Vec2,
         other_inps: Vec<(Lit, Option<Lit>)>,
     ) -> Self {
-        let x_offs = 100.0;
+        let x_offs = 120.0;
         let y_offs = 120.0 + 30.0 * other_inps.len() as f32;
 
         let children = match vsa.as_ref() {
@@ -227,22 +228,38 @@ impl RichVSA {
                     if ui.button("Learn").clicked() {
                         self.editable = false;
 
-                        let chars = {
-                            let start_chars = if let Lit::StringConst(s) = &start {
-                                s.chars()
-                            } else {
-                                "".chars()
-                            };
-                            let goal_chars = if let Lit::StringConst(s) = &goal {
-                                s.chars()
-                            } else {
-                                "".chars()
-                            };
-                            start_chars
-                                .chain(goal_chars)
-                                .map(|c| Lit::StringConst(c.to_string()))
-                                .collect::<Vec<_>>()
-                        };
+                        let complete_other_inps = self.other_inputs.iter().enumerate().filter_map(|(i, (inp, out))| {
+                            out.clone().map(|out| (i+1, (inp.clone(), out)))
+                        });
+
+                        let complete_examples = std::iter::once((0, (start.clone(), goal.clone())))
+                            .chain(complete_other_inps)
+                            .collect::<Vec<_>>(); 
+
+                        let mut char_sets = complete_examples.iter().map(|(_, (inp, out))| match (inp, out) {
+                            (Lit::StringConst(inp), Lit::StringConst(out)) => inp
+                                .chars()
+                                .chain(out.chars())
+                                .filter(|c| !c.is_alphanumeric())
+                                .map(|c| match c {
+                                    '.' => Lit::StringConst("\\.".to_string()),
+                                    '{' => Lit::StringConst("\\{".to_string()),
+                                    '}' => Lit::StringConst("\\{".to_string()),
+                                    _ => Lit::StringConst(c.to_string()),
+                                })
+                            .collect::<std::collections::HashSet<_>>(),
+                            _ => std::collections::HashSet::new(),
+                        });
+
+                        let chars = char_sets
+                            .next()
+                            .map(|s1| {
+                                s1.iter()
+                                    .filter(|c| char_sets.clone().all(|s2| s2.contains(c)))
+                                    .cloned()
+                                    .collect::<Vec<_>>()
+                            })
+                        .unwrap_or_default();
 
                         use std::collections::HashMap;
                         let mut all_cache = HashMap::new();
@@ -251,6 +268,8 @@ impl RichVSA {
 
                         let num_examples = 1 + self.other_inputs.len();
 
+                        // TODO: need to pass in to children
+                        // dbg!(&chars);
                         for prim in [
                             Lit::Input,
                             Lit::StringConst("".to_string()),
@@ -260,15 +279,15 @@ impl RichVSA {
                             Lit::LocConst(1),
                             Lit::LocEnd,
                         ]
-                        .into_iter()
-                        // .chain(chars.clone().into_iter())
-                        {
-                            bank.size_mut(1).push(AST::Lit(prim.clone()));
-                            all_cache.insert(
-                                std::iter::repeat(prim.clone()).take(num_examples).collect(),
-                                Rc::new(VSA::singleton(AST::Lit(prim.clone()))),
-                            );
-                        }
+                            .into_iter()
+                            .chain(chars.clone().into_iter())
+                            {
+                                bank.size_mut(1).push(AST::Lit(prim.clone()));
+                                all_cache.insert(
+                                    std::iter::repeat(prim.clone()).take(num_examples).collect(),
+                                    Rc::new(VSA::singleton(AST::Lit(prim.clone()))),
+                                    );
+                            }
 
                         for prim in [
                             Lit::StringConst("\\d".to_string()),
@@ -276,11 +295,11 @@ impl RichVSA {
                             Lit::StringConst("[a-z]".to_string()),
                             Lit::StringConst("[A-Z]".to_string()),
                         ]
-                        .into_iter()
-                        // .chain(chars.into_iter())
-                        {
-                            regex_bank.size_mut(1).push(AST::Lit(prim.clone()));
-                        }
+                            .into_iter()
+                            .chain(chars.into_iter())
+                            {
+                                regex_bank.size_mut(1).push(AST::Lit(prim.clone()));
+                            }
 
                         let bottom_up_inps = std::iter::once(start.clone())
                             .chain(self.other_inputs.iter().map(|(inp, _)| inp.clone()))
@@ -294,17 +313,9 @@ impl RichVSA {
                                 &mut bank,
                                 &mut regex_bank,
                                 false,
-                            );
+                                );
                         }
                         // dbg!(&bank);
-
-                        let complete_other_inps = self.other_inputs.iter().enumerate().filter_map(|(i, (inp, out))| {
-                            out.clone().map(|out| (i+1, (inp.clone(), out)))
-                        });
-
-                        let complete_examples = std::iter::once((0, (start.clone(), goal.clone())))
-                            .chain(complete_other_inps)
-                            .collect::<Vec<_>>(); 
 
                         let mut ex_vsas = complete_examples.iter().map(|(i, (inp, out))| {
                             let mut cache: HashMap<Lit, Rc<VSA<Lit, Fun>>> = HashMap::new();
@@ -322,11 +333,11 @@ impl RichVSA {
                                 &mut cache, 
                                 &bank,
                                 learn_depth,
-                            )
+                                )
                         });
 
-                        let mut res = ex_vsas.next().unwrap();
-
+                        let mut res: Rc<VSA<_, _>> = ex_vsas.next().unwrap();
+                        dbg!(&res);
                         for vsa in ex_vsas {
                             if let Some(prog) = res.pick_best(|ast| ast.cost()) {
                                 if complete_examples.iter().all(|(_, (inp, out))| prog.eval(inp) == *out) {
@@ -334,10 +345,13 @@ impl RichVSA {
                                 };
                             }
 
-                            res = Rc::new(res.intersect(vsa.as_ref()));
+                            dbg!(&vsa);
+                            res = VSA::flatten(Rc::new(res.intersect(vsa.as_ref())));
                         }
 
-                        let new_vsa = Rc::into_inner(res);
+                        // TODO: somehow convert union of unlearned to richvsa with multiexample
+
+                        let new_vsa = res.as_ref().clone();
                         let self_mut = Rc::as_ptr(&self.vsa) as *mut _;
                         // Safety: probably
                         unsafe { std::ptr::write(self_mut, new_vsa) };
@@ -556,6 +570,132 @@ impl RichVSA {
             other_inps.push((Lit::StringConst("".to_string()), None));
         }
     }
+
+    pub fn intersect(&self, other: &RichVSA) -> RichVSA {
+        match (self.vsa.as_ref(), other.vsa.as_ref()) {
+            (vsa, VSA::Union(union)) | (VSA::Union(union), vsa) => {
+                let rich_union = if self.vsa.as_ref() == vsa {
+                    self
+                } else {
+                    other
+                };
+
+                let ncs: Vec<_> = 
+                    rich_union.children.iter().map(|child| child.intersect(other)).collect();
+
+                let nvsa_children: Vec<_> = 
+                    union.iter().map(|n1| Rc::new(n1.clone().intersect(vsa))).collect();
+                let new_vsa = VSA::Union(nvsa_children);
+
+                RichVSA {
+                    vsa: Rc::new(new_vsa),
+                    input: self.input.clone(),
+                    other_inputs: self.other_inputs.clone(),
+                    goal: self.goal.clone(),
+                    children: ncs,
+                    ..*self
+                }
+            }
+
+            #[rustfmt::skip]
+            (VSA::Join { op: l_op, .. }, VSA::Join { op: r_op, .. }) if l_op != r_op => {
+                RichVSA {
+                    vsa: Rc::new(VSA::empty()),
+                    input: self.input.clone(),
+                    other_inputs: self.other_inputs.clone(),
+                    goal: self.goal.clone(),
+                    children: Vec::new(),
+                    ..*self
+                }
+            }
+
+            #[rustfmt::skip]
+            (VSA::Join { op, children: l_children, children_goals }, VSA::Join { op: _, children: r_children, .. })
+            => {
+                let ncs: Vec<_> = self.children.iter().zip(other.children.iter()).map(|(l, r)| {
+                    let real_r = RichVSA { 
+                        other_inputs: r.other_inputs.iter().map(|(inp, _)| (inp.clone(), None)).collect(),
+                        ..r.clone()
+                    };
+                    l.intersect(&real_r)
+                }).collect();
+
+                let nvsa_children: Vec<_> = 
+                    l_children.iter().zip(r_children).map(|(l, r)| Rc::new(l.intersect(r))).collect();
+
+                let new_vsa = VSA::Join {
+                    op: op.clone(),
+                    children: nvsa_children,
+                    children_goals: children_goals.clone(),
+                };
+
+                RichVSA {
+                    vsa: Rc::new(new_vsa),
+                    input: self.input.clone(),
+                    other_inputs: self.other_inputs.clone(),
+                    goal: self.goal.clone(),
+                    children: ncs,
+                    ..*self
+                }
+            }
+
+            #[rustfmt::skip]
+            (VSA::Join { op, children, .. }, VSA::Leaf(s)) | (VSA::Leaf(s), VSA::Join { op, children, .. })
+            => {
+                todo!()
+            }
+
+            (VSA::Leaf(_), VSA::Leaf(_)) => {
+                RichVSA {
+                    vsa: Rc::new(self.vsa.intersect(other.vsa.as_ref())),
+                    input: self.input.clone(),
+                    other_inputs: self.other_inputs.clone(),
+                    goal: self.goal.clone(),
+                    children: Vec::new(),
+                    ..*self
+                }
+            }
+
+            (VSA::Unlearned { .. }, _) | (_, VSA::Unlearned { .. }) => {
+                todo!()
+            }
+        }
+    }
+
+    // pub fn reintersect(&mut self) {
+    //     match self.vsa.as_ref() {
+    //         VSA::Leaf(_) | VSA::Unlearned { .. } => {}
+    //         VSA::Union(vsas) => {
+    //             // if we have unlearned, we convert it to other_inp
+    //             let unlearneds = vsas.iter().filter_map(|vsa| match vsa.as_ref() {
+    //                 VSA::Unlearned { .. } => Some(vsa.clone()),
+    //                 _ => None,
+    //             });
+    //             let cumulative_unlearned = unlearneds.reduce(|a, b| {
+    //                 todo!()
+    //             });
+    //             let others = vsas.iter().filter_map(|vsa| match vsa.as_ref() {
+    //                 VSA::Unlearned { .. } => None,
+    //                 _ => Some(vsa.clone()),
+    //             });
+    //             let set = if let Some(cumulative_unlearned) = cumulative_unlearned {
+    //                 std::iter::once(cumulative_unlearned).chain(others).collect()
+    //             } else {
+    //                 others.collect()
+    //             };
+    //             let new_vsa = VSA::Union(set);
+    //             let self_mut = Rc::as_ptr(&self.vsa) as *mut _;
+    //             // Safety: probably
+    //             unsafe { std::ptr::write(self_mut, new_vsa) };
+    //             // TODO: get children
+    //         }
+    //         VSA::Join { .. } => {
+    //             for child in self.children.iter_mut() {
+    //                 child.reintersect();
+    //             }
+    //         }
+    //     }
+    // }
 }
 
 impl PartialEq for RichVSA {

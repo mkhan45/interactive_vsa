@@ -743,19 +743,19 @@ pub fn bottom_up<'a>(
 
         // First Last, Another Name
         // it was just a coincidence the last name has a in pos 2 :::
-        match adj {
-            AST::App { fun: Fun::Find | Fun::FindEnd, args } => {
-                match args.as_slice() {
-                    [AST::Lit(Lit::Input), AST::Lit(Lit::StringConst(s)), AST::Lit(Lit::LocConst(n))] => {
-                        if s == "[A-Z]" {
-                            dbg!(adj, &outs, cache.get(&outs));
-                        }
-                    }
-                    _ => {}
-                }
-            }
-            _ => {}
-        }
+        // match adj {
+        //     AST::App { fun: Fun::Find | Fun::FindEnd, args } => {
+        //         match args.as_slice() {
+        //             [AST::Lit(Lit::Input), AST::Lit(Lit::StringConst(s)), AST::Lit(Lit::LocConst(n))] => {
+        //                 if s == "[A-Z]" {
+        //                     dbg!(adj, &outs, cache.get(&outs));
+        //                 }
+        //             }
+        //             _ => {}
+        //         }
+        //     }
+        //     _ => {}
+        // }
 
         // dbg!(adj.size(), size);
         // dbg!(adj.size(), size, bank.len());
@@ -764,7 +764,7 @@ pub fn bottom_up<'a>(
                 e.insert(Rc::new(VSA::singleton(adj.clone())));
                 true
             }
-            Entry::Occupied(mut e) => {
+            Entry::Occupied(mut e) if adj.includes_input() || adj.is_lit() => {
                 let old = e.get_mut();
                 *old = Rc::new(VSA::unify(
                     old.clone(),
@@ -772,7 +772,7 @@ pub fn bottom_up<'a>(
                 ));
                 false
             }
-            // _ => false,
+            _ => false,
         }
         // if let Entry::Vacant(e) = cache.entry(outs) {
         //     e.insert(Rc::new(VSA::singleton(adj.clone())));
